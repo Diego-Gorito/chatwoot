@@ -27,7 +27,15 @@ module GroupConversationHandler # rubocop:disable Metrics/ModuleLength
       }
     ).perform
 
-    [group_contact_inbox, group_contact_inbox.contact]
+    contact = group_contact_inbox.contact
+    update_group_contact_info(contact)
+
+    [group_contact_inbox, contact]
+  end
+
+  def update_group_contact_info(contact)
+    group_name = extract_group_name
+    contact.update!(name: group_name) if group_name.present? && contact.name != group_name
   end
 
   def find_or_create_sender_contact
