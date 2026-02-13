@@ -458,6 +458,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
                       :read_messages,
                       :unread_message,
                       :received_messages,
+                      :group_metadata,
                       :on_whatsapp,
                       :delete_message,
                       :edit_message
