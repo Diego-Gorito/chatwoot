@@ -233,7 +233,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
       format: :json
     )
 
-    return nil unless process_response(response)
+    raise ProviderUnavailableError unless process_response(response)
 
     response.parsed_response&.deep_symbolize_keys
   end
