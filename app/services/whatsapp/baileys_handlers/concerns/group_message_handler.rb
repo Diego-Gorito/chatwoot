@@ -9,7 +9,16 @@ module Whatsapp::BaileysHandlers::Concerns::GroupMessageHandler # rubocop:disabl
     @lock_acquired = acquire_message_processing_lock
     return unless @lock_acquired
 
+    # Lock by group jid to prevent race conditions when multiple messages
+    # from the same group arrive simultaneously (e.g., Multiple contacts sending messages at the same time).
     with_contact_lock(extract_group_jid) do
+      # Re-check after acquiring lock to handle race conditions where:
+      # 1. An agent sends a message from Chatwoot (slow API call)
+      # 2. WhatsApp sends webhook before source_id is saved
+      # 3. Webhook handler times out waiting for channel lock and proceeds
+      # 4. By now, source_id should be set, so we can find the message
+      return if find_message_by_source_id(raw_message_id)
+
       process_group_message
     end
   ensure
