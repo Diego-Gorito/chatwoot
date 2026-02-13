@@ -1232,6 +1232,44 @@ describe Whatsapp::Providers::WhatsappBaileysService do
     end
   end
 
+  describe '#group_metadata' do
+    let(:group_jid) { '123456789123456789@g.us' }
+
+    it 'returns symbolized group metadata on success' do
+      stub_request(:get, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-metadata")
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_jid })
+        .to_return(
+          status: 200,
+          body: {
+            subject: 'Test Group',
+            participants: [
+              { id: '111@lid', phoneNumber: '5511911111111@s.whatsapp.net', admin: 'admin' },
+              { id: '222@lid', phoneNumber: '5511922222222@s.whatsapp.net', admin: nil }
+            ]
+          }.to_json
+        )
+
+      result = service.group_metadata(group_jid)
+
+      expect(result[:subject]).to eq('Test Group')
+      expect(result[:participants].length).to eq(2)
+      expect(result[:participants].first[:admin]).to eq('admin')
+    end
+
+    it 'raises ProviderUnavailableError when the API returns an error' do
+      stub_request(:get, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-metadata")
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_jid })
+        .to_return(status: 404, body: { error: 'Group not found' }.to_json)
+
+      stub_request(:post, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}")
+        .to_return(status: 200)
+
+      expect do
+        service.group_metadata(group_jid)
+      end.to raise_error(Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError)
+    end
+  end
+
   def stub_headers(channel)
     {
       'Content-Type' => 'application/json',
