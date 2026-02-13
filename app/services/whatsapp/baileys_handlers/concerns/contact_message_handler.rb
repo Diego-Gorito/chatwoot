@@ -60,10 +60,11 @@ module Whatsapp::BaileysHandlers::Concerns::ContactMessageHandler
   end
 
   def update_contact_info(phone, source_id, identifier)
-    update_params = {}
-    update_params[:phone_number] = "+#{phone}" if phone
-    update_params[:identifier] = identifier
-    update_params[:name] = contact_name if @contact.name.in?([phone, source_id, identifier])
+    update_params = {
+      phone_number: ("+#{phone}" if phone),
+      identifier: (identifier if @contact.identifier != identifier),
+      name: (contact_name if @contact.name.in?([phone, source_id, identifier]))
+    }.compact
 
     @contact.update!(update_params) if update_params.present?
     try_update_contact_avatar
