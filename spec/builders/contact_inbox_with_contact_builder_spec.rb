@@ -103,7 +103,6 @@ describe ContactInboxWithContactBuilder do
         inbox: inbox,
         contact_attributes: {
           name: 'Group Contact',
-          phone_number: '+1234567890',
           group_type: :group
         }
       ).perform
