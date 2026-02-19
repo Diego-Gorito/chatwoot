@@ -30,7 +30,7 @@ module Whatsapp::BaileysHandlers::Concerns::GroupMessageHandler # rubocop:disabl
     @group_contact_inbox, @group_contact = find_or_create_group_contact
 
     consolidate_contact(baileys_sender_phone, baileys_sender_lid, baileys_sender_identifier)
-    @sender_contact_inbox, @sender_contact = find_or_create_sender_contact
+    @sender_contact = find_or_create_sender_contact
     update_contact_whatsapp_info(@sender_contact, baileys_sender_phone, baileys_sender_identifier, name: extract_sender_name) if @sender_contact
 
     @conversation = find_or_create_group_conversation(@group_contact_inbox)

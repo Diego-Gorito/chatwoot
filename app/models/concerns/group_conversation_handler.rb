@@ -40,7 +40,7 @@ module GroupConversationHandler # rubocop:disable Metrics/ModuleLength
 
   def find_or_create_sender_contact
     source_id = extract_sender_source_id
-    return [nil, nil] if source_id.blank?
+    return nil if source_id.blank?
 
     sender_contact_inbox = ::ContactInboxWithContactBuilder.new(
       source_id: source_id,
@@ -48,7 +48,7 @@ module GroupConversationHandler # rubocop:disable Metrics/ModuleLength
       contact_attributes: build_sender_contact_attributes
     ).perform
 
-    [sender_contact_inbox, sender_contact_inbox.contact]
+    sender_contact_inbox.contact
   end
 
   def find_or_create_group_conversation(group_contact_inbox)
