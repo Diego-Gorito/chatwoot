@@ -129,37 +129,30 @@ module Whatsapp::BaileysHandlers::Concerns::GroupContactMessageHandler # rubocop
     phone if phone.match?(/^\d+$/)
   end
 
-  # NOTE: Required by GroupConversationHandler interface
   def extract_group_identifier
     extract_group_jid
   end
 
-  # NOTE: Required by GroupConversationHandler interface
   def extract_group_source_id
     extract_group_jid.split('@').first
   end
 
-  # NOTE: Required by GroupConversationHandler interface
   def extract_group_name
     @group_metadata&.dig(:subject) || extract_group_jid.split('@').first
   end
 
-  # NOTE: Required by GroupConversationHandler interface
   def extract_sender_identifier
     baileys_sender_identifier
   end
 
-  # NOTE: Required by GroupConversationHandler interface
   def extract_sender_source_id
     baileys_sender_lid || baileys_sender_phone
   end
 
-  # NOTE: Required by GroupConversationHandler interface
   def extract_sender_name
     @raw_message[:pushName] || baileys_sender_phone || baileys_sender_lid
   end
 
-  # NOTE: Required by GroupConversationHandler interface
   def extract_sender_phone
     phone = baileys_sender_phone
     "+#{phone}" if phone.present?
