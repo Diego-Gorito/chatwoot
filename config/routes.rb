@@ -185,6 +185,7 @@ Rails.application.routes.draw do
             member do
               get :contactable_inboxes
               post :destroy_custom_attributes
+              post :sync_group
               delete :avatar
             end
             scope module: :contacts do

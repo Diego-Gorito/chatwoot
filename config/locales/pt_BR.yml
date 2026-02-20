@@ -278,6 +278,11 @@ pt_BR:
   contacts:
     online:
       delete: '%{contact_name} está Online, por favor, tente novamente mais tarde'
+    sync_group:
+      not_a_group: 'O contato não é um grupo'
+      no_identifier: 'O contato não possui um identificador de grupo'
+      no_supported_inbox: 'Nenhuma caixa de entrada com suporte a sincronização de grupo encontrada para este contato'
+      metadata_unavailable: 'Não foi possível obter os metadados do grupo do provedor'
   integration_apps:
     #Note: webhooks and dashboard_apps don't need short_description as they use different modal components
     dashboard_apps:
