@@ -72,26 +72,30 @@ class Contacts::SyncGroupService
   def sync_group_participants(group_metadata)
     return if group_metadata[:participants].blank?
 
-    conversations = @contact_inbox.conversations.where(status: :open)
-    return if conversations.blank?
-
     participants = group_metadata[:participants]
 
-    conversations.find_each do |conversation|
-      sync_participants_for_conversation(conversation, participants)
-    end
-  end
-
-  def sync_participants_for_conversation(conversation, participants)
-    new_contact_ids = participants.filter_map do |participant|
+    participant_contacts = participants.filter_map do |participant|
       participant_contact = find_or_create_participant_contact(participant)
       next if participant_contact.blank?
 
-      role = participant[:admin].in?(%w[admin superadmin]) ? :admin : :member
-      member = ConversationGroupMember.find_or_initialize_by(conversation: conversation, contact: participant_contact)
+      { contact: participant_contact, admin: participant[:admin] }
+    end
+
+    conversations = @contact_inbox.conversations.where(status: :open)
+    return if conversations.blank?
+
+    conversations.find_each do |conversation|
+      sync_participants_for_conversation(conversation, participant_contacts)
+    end
+  end
+
+  def sync_participants_for_conversation(conversation, participant_contacts)
+    new_contact_ids = participant_contacts.filter_map do |entry|
+      role = entry[:admin].in?(%w[admin superadmin]) ? :admin : :member
+      member = ConversationGroupMember.find_or_initialize_by(conversation: conversation, contact: entry[:contact])
       member.assign_attributes(role: role, is_active: true)
       member.save! if member.changed?
-      participant_contact.id
+      entry[:contact].id
     end
 
     conversation.group_members.active.where.not(contact_id: new_contact_ids).find_each do |member|
