@@ -79,6 +79,7 @@ module Whatsapp::BaileysHandlers::Concerns::GroupContactMessageHandler # rubocop
       source_id: source_id,
       inbox: inbox,
       contact_attributes: {
+        name: phone,
         phone_number: ("+#{phone}" if phone),
         identifier: identifier
       }
