@@ -4,7 +4,7 @@ class Contacts::SyncGroupService
   def perform
     validate_group_contact!
 
-    contact.conversations.find_each(&:sync_group)
+    contact.conversations.where(status: %i[open pending]).find_each(&:sync_group)
 
     contact.reload
     dispatch_group_synced_event
