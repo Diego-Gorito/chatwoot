@@ -288,6 +288,19 @@ en:
         demote:
           single: '%{author_name} demoted %{contact_name} to member'
           multiple: '%{author_name} demoted %{contact_names} and %{last_contact_name} to member'
+      groups_update:
+        subject_changed: '%{author_name} changed the group name to "%{value}"'
+        description_changed: '%{author_name} changed the group description'
+        description_removed: '%{author_name} removed the group description'
+        restrict_enabled: '%{author_name} changed the settings so only admins can edit the group settings'
+        restrict_disabled: '%{author_name} changed the settings so all members can edit the group settings'
+        announce_enabled: "%{author_name} changed this group's settings to allow only admins to send messages to this group"
+        announce_disabled: "%{author_name} changed this group's settings to allow all members to send messages to this group"
+        member_add_mode_enabled: "%{author_name} changed this group's setting to allow all members to add others to this group"
+        member_add_mode_disabled: "%{author_name} changed this group's setting to allow only admins to add others to this group"
+        join_approval_mode_enabled: '%{author_name} turned on admin approval to join this group'
+        join_approval_mode_disabled: '%{author_name} turned off admin approval to join this group'
+        invite_link_reset: "%{author_name} reset this group's invite link"
       csat:
         not_sent_due_to_messaging_window: 'CSAT survey not sent due to outgoing message restrictions'
       auto_resolve:
