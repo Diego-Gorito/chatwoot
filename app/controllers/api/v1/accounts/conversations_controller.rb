@@ -141,6 +141,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   def sync_group
+    authorize @conversation, :sync_group?
     raise ActionController::BadRequest, I18n.t('contacts.sync_group.not_a_group') if @conversation.contact.group_type_individual?
 
     @conversation.sync_group

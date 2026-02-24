@@ -7,6 +7,10 @@ class ConversationPolicy < ApplicationPolicy
     administrator?
   end
 
+  def sync_group?
+    administrator? || agent_bot? || agent_can_view_conversation?
+  end
+
   def show?
     administrator? || agent_bot? || agent_can_view_conversation?
   end
