@@ -301,6 +301,9 @@ en:
         join_approval_mode_enabled: '%{author_name} turned on admin approval to join this group'
         join_approval_mode_disabled: '%{author_name} turned off admin approval to join this group'
         invite_link_reset: "%{author_name} reset this group's invite link"
+        membership_request_created: '%{contact_name} wants to join the group'
+        membership_request_revoked: '%{contact_name} no longer wants to join the group'
+        icon_changed: '%{author_name} changed the group image'
       csat:
         not_sent_due_to_messaging_window: 'CSAT survey not sent due to outgoing message restrictions'
       auto_resolve:
