@@ -411,6 +411,17 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
+      it 'falls back to identifier when contact has no phone_number' do
+        conversation.contact.update!(phone_number: nil, identifier: '99999999@lid')
+        message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
+
+        allow(whatsapp_channel).to receive(:send_message).with('99999999@lid', message).and_return('msg_lid')
+
+        described_class.new(message: message).perform
+
+        expect(message.reload.source_id).to eq('msg_lid')
+      end
+
       it 'uses identifier as recipient_id for group contacts' do
         conversation.contact.update!(phone_number: '+123456789', identifier: '123456789123456789@g.us', group_type: :group)
         message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
