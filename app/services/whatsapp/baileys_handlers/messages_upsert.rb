@@ -2,6 +2,7 @@ module Whatsapp::BaileysHandlers::MessagesUpsert
   include Whatsapp::BaileysHandlers::Helpers
   include Whatsapp::BaileysHandlers::Concerns::GroupContactMessageHandler
   include Whatsapp::BaileysHandlers::Concerns::IndividualContactMessageHandler
+  include Whatsapp::BaileysHandlers::Concerns::GroupEventHelper
   include BaileysHelper
 
   MEMBERSHIP_REQUEST_STUB = 'GROUP_MEMBERSHIP_JOIN_APPROVAL_REQUEST_NON_ADMIN_ADD'.freeze
@@ -44,12 +45,17 @@ module Whatsapp::BaileysHandlers::MessagesUpsert
   def handle_message_stub
     return unless jid_type == 'group'
 
+    @lock_acquired = acquire_message_processing_lock
+    return unless @lock_acquired
+
     case @raw_message[:messageStubType]
     when MEMBERSHIP_REQUEST_STUB
       handle_membership_request_stub
     when ICON_CHANGE_STUB
       handle_icon_change_stub
     end
+  ensure
+    clear_message_source_id_from_redis if @lock_acquired
   end
 
   def handle_membership_request_stub
@@ -63,8 +69,8 @@ module Whatsapp::BaileysHandlers::MessagesUpsert
     contact_name = resolve_membership_request_contact_name(stub_params)
 
     with_contact_lock(group_jid) do
-      group_contact_inbox = find_or_create_group_contact_inbox_for_update(group_jid)
-      conversation = find_or_create_conversation_for_update(group_contact_inbox)
+      group_contact_inbox = find_or_create_group_contact_inbox_by_jid(group_jid)
+      conversation = find_or_create_group_conversation(group_contact_inbox)
       create_group_activity(conversation, action, contact_name: contact_name)
     end
   end
@@ -74,8 +80,8 @@ module Whatsapp::BaileysHandlers::MessagesUpsert
     participant_jid = @raw_message[:key][:participant]
 
     with_contact_lock(group_jid) do
-      group_contact_inbox = find_or_create_group_contact_inbox_for_update(group_jid)
-      conversation = find_or_create_conversation_for_update(group_contact_inbox)
+      group_contact_inbox = find_or_create_group_contact_inbox_by_jid(group_jid)
+      conversation = find_or_create_group_conversation(group_contact_inbox)
       author_name = resolve_author_name(participant_jid)
       create_group_activity(conversation, 'icon_changed', author_name: author_name)
     end

@@ -1,6 +1,7 @@
 module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
   include Whatsapp::BaileysHandlers::Helpers
   include Whatsapp::BaileysHandlers::Concerns::GroupContactMessageHandler
+  include Whatsapp::BaileysHandlers::Concerns::GroupEventHelper
 
   private
 
@@ -14,8 +15,8 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
     return if group_jid.blank? || action.blank? || participants.blank?
 
     with_contact_lock(group_jid) do
-      group_contact_inbox = find_or_create_group_contact_inbox(group_jid)
-      conversation = find_or_create_conversation(group_contact_inbox)
+      group_contact_inbox = find_or_create_group_contact_inbox_by_jid(group_jid)
+      conversation = find_or_create_group_conversation(group_contact_inbox)
 
       contacts = participants.filter_map { |participant| find_or_create_participant_contact(participant) }
       return if contacts.empty?
@@ -23,33 +24,6 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
       contacts.each { |contact| apply_participant_action(action, conversation, contact) }
       create_participant_activity(conversation, action, contacts, author)
     end
-  end
-
-  def find_or_create_group_contact_inbox(group_jid)
-    source_id = group_jid.split('@').first
-
-    ::ContactInboxWithContactBuilder.new(
-      source_id: source_id,
-      inbox: inbox,
-      contact_attributes: {
-        name: source_id,
-        identifier: group_jid,
-        group_type: :group
-      }
-    ).perform
-  end
-
-  def find_or_create_conversation(group_contact_inbox)
-    conversation = group_contact_inbox.conversations.where(status: :open).last
-    return conversation if conversation.present?
-
-    ::Conversation.create!(
-      account_id: inbox.account_id,
-      inbox_id: inbox.id,
-      contact_id: group_contact_inbox.contact_id,
-      contact_inbox_id: group_contact_inbox.id,
-      conversation_type: :group
-    )
   end
 
   def apply_participant_action(action, conversation, contact)
@@ -108,15 +82,5 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
       params[:last_contact_name] = names.last
       I18n.t("conversations.activity.group_participants.#{action}.multiple", **params)
     end
-  end
-
-  def resolve_author_name(author_jid)
-    return author_jid if author_jid.blank?
-
-    lid = author_jid.split('@').first
-    contact_inbox = inbox.contact_inboxes.find_by(source_id: lid)
-    resolved_contact = contact_inbox&.contact
-
-    resolved_contact&.name.presence || resolved_contact&.phone_number || lid
   end
 end
