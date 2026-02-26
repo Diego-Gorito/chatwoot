@@ -274,6 +274,10 @@
   $ref: ./application/contact_inboxes/create.yml
 /api/v1/accounts/{account_id}/contacts/{id}/contactable_inboxes:
   $ref: ./application/contactable_inboxes/get.yml
+/api/v1/accounts/{account_id}/contacts/{id}/sync_group:
+  $ref: ./application/contacts/sync_group.yml
+/api/v1/accounts/{account_id}/contacts/{id}/group_members:
+  $ref: ./application/contacts/group_members.yml
 
 # Contact Merge
 /api/v1/accounts/{account_id}/actions/contact_merge:
@@ -367,6 +371,13 @@
     - $ref: '#/components/parameters/conversation_id'
   post:
     $ref: ./application/conversation/toggle_priority.yml
+
+/api/v1/accounts/{account_id}/conversations/{conversation_id}/sync_group:
+  parameters:
+    - $ref: '#/components/parameters/account_id'
+    - $ref: '#/components/parameters/conversation_id'
+  post:
+    $ref: ./application/conversation/sync_group.yml
 
 /api/v1/accounts/{account_id}/conversations/{conversation_id}/custom_attributes:
   parameters:
