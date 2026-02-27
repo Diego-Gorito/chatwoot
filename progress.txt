@@ -1,3 +1,11 @@
+## 2026-02-27 - US-008
+- Created GroupInvitesController (note: singular resource :group_invite routes to group_invites_controller)
+- show: calls group_invite_code(jid), returns { invite_code, invite_url }
+- revoke: calls revoke_group_invite(jid), returns new { invite_code, invite_url }
+- **Learnings for future iterations:**
+  - `resource :group_invite` (singular resource) routes to `group_invites_controller` (pluralized class name) in Rails conventions
+---
+
 ## 2026-02-27 - US-007
 - Created GroupMetadataController with update action
 - Calls update_group_subject when subject param present, updates contact.name
