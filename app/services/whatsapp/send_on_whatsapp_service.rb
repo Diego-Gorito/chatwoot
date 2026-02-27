@@ -53,11 +53,8 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
   def recipient_id
     return message.conversation.contact_inbox.source_id unless %w[baileys zapi].include?(channel.provider)
 
-    contact = message.conversation.contact
-    return contact.identifier if contact.group_type_group?
-
     # NOTE: `identifier` must be in the WhatsApp LID format
-    contact.phone_number&.gsub(/[^\d]/, '') || contact.identifier
+    message.conversation.contact.phone_number&.gsub(/[^\d]/, '') || message.conversation.contact.identifier
   end
 
   def template_params
