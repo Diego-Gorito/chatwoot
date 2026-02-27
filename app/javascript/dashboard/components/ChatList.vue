@@ -491,6 +491,10 @@ function setParamsForEditFolderModal() {
       { id: 'high', name: t('CONVERSATION.PRIORITY.OPTIONS.HIGH') },
       { id: 'urgent', name: t('CONVERSATION.PRIORITY.OPTIONS.URGENT') },
     ],
+    group_type: [
+      { id: 'individual', name: t('GROUP.FILTER.INDIVIDUAL') },
+      { id: 'group', name: t('GROUP.FILTER.GROUP') },
+    ],
     filterTypes: advancedFilterTypes.value,
     allCustomAttributes: conversationCustomAttributes.value,
   };
