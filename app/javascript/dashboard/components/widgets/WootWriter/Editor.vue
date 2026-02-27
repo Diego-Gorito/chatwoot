@@ -14,6 +14,7 @@ import {
 import CannedResponse from '../conversation/CannedResponse.vue';
 import KeyboardEmojiSelector from './keyboardEmojiSelector.vue';
 import TagAgents from '../conversation/TagAgents.vue';
+import TagGroupMembers from '../conversation/TagGroupMembers.vue';
 import VariableList from '../conversation/VariableList.vue';
 import TagTools from '../conversation/TagTools.vue';
 import CopilotMenuBar from './CopilotMenuBar.vue';
@@ -93,6 +94,8 @@ const props = defineProps({
   showImageResizeToolbar: { type: Boolean, default: false }, // A kill switch to show or hide the image toolbar
   focusOnMount: { type: Boolean, default: true },
   enableCopilot: { type: Boolean, default: true },
+  isGroupConversation: { type: Boolean, default: false },
+  groupContactId: { type: [Number, String], default: null },
 });
 
 const emit = defineEmits([
@@ -289,7 +292,10 @@ const plugins = computed(() => {
       trigger: '@',
       showMenu: showUserMentions,
       searchTerm: mentionSearchKey,
-      isAllowed: () => props.isPrivate || !props.enableCaptainTools,
+      isAllowed: () =>
+        props.isPrivate ||
+        props.isGroupConversation ||
+        !props.enableCaptainTools,
     }),
     createSuggestionPlugin({
       trigger: '/',
@@ -807,6 +813,12 @@ useEmitter(BUS_EVENTS.INSERT_INTO_RICH_EDITOR, insertContentIntoEditor);
       'opacity-50 cursor-not-allowed pointer-events-none': disabled,
     }"
   >
+    <TagGroupMembers
+      v-if="showUserMentions && isGroupConversation && !isPrivate"
+      :search-key="mentionSearchKey"
+      :group-contact-id="groupContactId"
+      @select-agent="content => insertSpecialContent('mention', content)"
+    />
     <TagAgents
       v-if="showUserMentions && isPrivate"
       :search-key="mentionSearchKey"
