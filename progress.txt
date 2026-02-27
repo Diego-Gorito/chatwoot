@@ -1,3 +1,22 @@
+## 2026-02-27 - US-014
+- ConversationBasicFilter.vue already had the Type section with group_type filter implemented
+- ChatList.vue already handled group_type in conversationFilters and setFiltersFromUISettings
+- Store (actions/getters/index) already had setChatGroupTypeFilter, getChatGroupTypeFilter, chatGroupTypeFilter state
+- API (inbox/conversation.js) already mapped groupType → group_type query param
+- i18n keys (GROUP.FILTER.*) already existed in en/groups.json and pt_BR/groups.json
+- No code changes were needed; all acceptance criteria already met by prior work
+- **Learnings for future iterations:**
+  - ConversationBasicFilter emits changeFilter event caught by ChatList.onBasicFilterChange; group_type value flows: filter → activeGroupType → conversationFilters.groupType → API param group_type
+---
+
+## 2026-02-27 - US-013
+- Created app/javascript/dashboard/i18n/locale/pt_BR/groups.json with Portuguese translations for all group feature keys
+- Added `import groups` and `...groups` spread to pt_BR/index.js
+- en/groups.json already existed with all required keys; pt_BR was missing
+- **Learnings for future iterations:**
+  - pt_BR/index.js requires both import and spread; en/index.js already had groups; pt_BR did not
+---
+
 ## 2026-02-27 - US-012
 - Created app/javascript/dashboard/store/modules/groupMembers.js
 - Added SET_GROUP_MEMBERS_UI_FLAG and SET_GROUP_MEMBERS to mutation-types.js
