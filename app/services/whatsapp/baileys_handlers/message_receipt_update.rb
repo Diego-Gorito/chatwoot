@@ -24,16 +24,11 @@ module Whatsapp::BaileysHandlers::MessageReceiptUpdate
     return if new_status.nil?
     return unless receipt_status_transition_allowed?(new_status)
 
-    update_last_seen_at_from_receipt if incoming? && new_status == 'read'
     @message.update!(status: new_status)
   end
 
   def receipt_status
-    if @raw_message.dig(:receipt, :readTimestamp).present?
-      'read'
-    elsif @raw_message.dig(:receipt, :receiptTimestamp).present?
-      'delivered'
-    end
+    'delivered' if @raw_message.dig(:receipt, :receiptTimestamp).present?
   end
 
   def receipt_status_transition_allowed?(new_status)
@@ -41,12 +36,5 @@ module Whatsapp::BaileysHandlers::MessageReceiptUpdate
     return false if @message.status == 'delivered' && new_status == 'delivered'
 
     true
-  end
-
-  def update_last_seen_at_from_receipt
-    conversation = @message.conversation
-    conversation.agent_last_seen_at = Time.current
-    conversation.assignee_last_seen_at = Time.current if conversation.assignee_id.present?
-    conversation.save!
   end
 end

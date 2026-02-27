@@ -1077,21 +1077,12 @@ describe Whatsapp::IncomingMessageBaileysService do
         expect(message.reload.status).to eq('delivered')
       end
 
-      it 'updates message from sent to read on readTimestamp' do
+      it 'ignores readTimestamp and does not update status' do
         receipt_data.replace(userJid: '12345678@lid', readTimestamp: 1_772_056_497)
 
         described_class.new(inbox: inbox, params: params).perform
 
-        expect(message.reload.status).to eq('read')
-      end
-
-      it 'updates message from delivered to read on readTimestamp' do
-        message.update!(status: 'delivered')
-        receipt_data.replace(userJid: '12345678@lid', readTimestamp: 1_772_056_497)
-
-        described_class.new(inbox: inbox, params: params).perform
-
-        expect(message.reload.status).to eq('read')
+        expect(message.reload.status).to eq('sent')
       end
 
       it 'does not downgrade a delivered message on receiptTimestamp' do
@@ -1110,31 +1101,10 @@ describe Whatsapp::IncomingMessageBaileysService do
         expect(message.reload.status).to eq('read')
       end
 
-      it 'does not downgrade a read message on readTimestamp' do
-        message.update!(status: 'read')
-        receipt_data.replace(userJid: '12345678@lid', readTimestamp: 1_772_056_497)
-
-        described_class.new(inbox: inbox, params: params).perform
-
-        expect(message.reload.status).to eq('read')
-      end
-
       it 'does not raise error when message is not found' do
         receipt_payload[:key][:id] = 'NONEXISTENT_MSG_ID'
 
         expect { described_class.new(inbox: inbox, params: params).perform }.not_to raise_error
-      end
-
-      it 'updates conversation timestamps on read receipt for incoming message' do
-        freeze_time
-        receipt_payload[:key][:fromMe] = false
-        receipt_data.replace(userJid: '12345678@lid', readTimestamp: 1_772_056_497)
-        conversation.update!(agent_last_seen_at: 1.day.ago, assignee_last_seen_at: 1.day.ago)
-
-        described_class.new(inbox: inbox, params: params).perform
-
-        expect(conversation.reload.agent_last_seen_at).to eq(Time.current)
-        expect(conversation.assignee_last_seen_at).to eq(Time.current)
       end
     end
   end
