@@ -127,6 +127,7 @@
 - All new Vue components must use <script setup> + Composition API; Tailwind only (no custom/scoped CSS)
 - ActionCable events flow through a message handler that dispatches to Vuex; group_synced payload includes all member data — no re-fetch needed
 - i18n: always add both en (app/javascript/dashboard/i18n/locale/en/) and pt_BR translations
+- Editor.vue @ mention: `suggestionsPlugin` isAllowed gates dropdown trigger; TagAgents for private (agents/teams), TagGroupMembers for group non-private (contacts); both use `insertSpecialContent('mention', content)` with content.type determining mentionType in serialization
 
 ---
 
@@ -294,4 +295,52 @@
   - Grid-based avatar layout: for LEFT orientation, use grid-cols-[24px_1fr] with template areas "avatar bubble" / "spacer meta"; the 24px column creates alignment even when avatar div is hidden
   - showGroupSenderAvatar parallels showGroupSenderName — both gate on !groupWithPrevious, but avatar only needs isGroupIncoming (no name check)
   - Manual browser verification needed (no dev-browser skill available)
+---
+
+## 2026-02-27 - US-026
+- Created TagGroupMembers.vue at app/javascript/dashboard/components/widgets/conversation/
+- Uses groupMembers store getter to display active group members filtered by search
+- Each item emits with type: 'contact' so mention node serializes as mention://contact/ID/EncodedName
+- Modified Editor.vue: added isGroupConversation + groupContactId props, updated @ suggestion plugin isAllowed to include group conversations, renders TagGroupMembers for group non-private context
+- Modified ReplyBox.vue: added isGroupConversation and groupContactId computed properties from currentChat, passes them to WootMessageEditor
+- In private notes (even in group conversations), existing agent/team mention behavior unchanged
+- In individual conversations, no change at all
+- Files changed: TagGroupMembers.vue (new), Editor.vue, ReplyBox.vue
+- **Learnings for future iterations:**
+  - The @ mention suggestion plugin uses `isAllowed` callback to gate when the dropdown triggers; adding `props.isGroupConversation` to the condition allows it in group non-private context
+  - The `createNode` helper for 'mention' type uses `content.type` as `mentionType` — so TagGroupMembers items must have `type: 'contact'` to produce mention://contact/... URIs
+  - TagAgents and TagGroupMembers are exclusive: TagAgents shows for `isPrivate`, TagGroupMembers shows for `isGroupConversation && !isPrivate`
+  - i18n key GROUP.MENTION.DROPDOWN_HEADER was already created in US-013 for both en and pt_BR
+  - Manual browser verification needed (no dev-browser skill available)
+---
+
+## 2026-02-27 - US-027
+- Extended markdown-it mention plugin regex to match mention://contact/ID/EncodedName URIs
+- Added mentionType extraction to token during parsing
+- Contact mentions rendered with additional `prosemirror-mention-contact` class
+- Added Tailwind arbitrary selector styling on FormattedContent.vue: bg-n-blue-3, rounded, px-1, font-medium
+- Existing mention://user and mention://team rendering unchanged (same class, no new styling)
+- Files changed: shared/helpers/markdownIt/link.js, components-next/message/bubbles/Text/FormattedContent.vue
+- **Learnings for future iterations:**
+  - markdown-it mention plugin stores mentionType on the token object; renderer reads it to differentiate rendering
+  - Tailwind arbitrary selectors `[&_.class]:style` on parent elements is the pattern for styling dynamically rendered HTML content (v-dompurify-html)
+  - DOMPurify preserves class attributes by default, so adding classes in rendered HTML works
+  - Manual browser verification needed (no dev-browser skill available)
+---
+
+## 2026-02-27 - US-028
+- Added contact.group_synced ActionCable event handler to frontend
+- Backend: Modified action_cable_listener.rb to include group_members data in the contact.group_synced broadcast payload via new group_members_data private method
+- Frontend: Registered 'contact.group_synced' event in ActionCableConnector events map
+- Frontend: Added onContactGroupSynced handler that dispatches groupMembers/setGroupMembers
+- Frontend: Added setGroupMembers action to groupMembers store module (synchronous commit to SET_GROUP_MEMBERS)
+- Tests: Added 2 tests to actionCable.spec.js (event registration + dispatch verification)
+- Tests: Added 1 test to groupMembers.spec.js (setGroupMembers action)
+- All 16 frontend tests pass, all 13 backend listener specs pass
+- Files changed: action_cable_listener.rb, actionCable.js, groupMembers.js, actionCable.spec.js, groupMembers.spec.js
+- **Learnings for future iterations:**
+  - ActionCable listener can build custom payloads by merging additional data into push_event_data; use this pattern when events need richer data than the default model serialization
+  - Frontend ActionCable handler pattern: register event string in constructor this.events, add handler method that dispatches to Vuex store
+  - group_members_data query mirrors the controller index query: ConversationGroupMember.active.where(conversation: group_conversations).includes(:contact)
+  - Manual browser verification not needed for this story (no UI changes)
 ---
