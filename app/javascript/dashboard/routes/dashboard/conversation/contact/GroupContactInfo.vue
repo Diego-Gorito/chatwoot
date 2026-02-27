@@ -155,6 +155,11 @@ const inviteUrl = ref('');
 const isFetchingInvite = ref(false);
 const isRevokingInvite = ref(false);
 
+// Join requests state
+const pendingRequests = ref([]);
+const isFetchingRequests = ref(false);
+const loadingRequestJid = ref(null);
+
 const onSync = async () => {
   try {
     await store.dispatch('groupMembers/sync', {
@@ -332,10 +337,46 @@ const revokeInviteLink = async () => {
   }
 };
 
+// Join request methods
+const fetchPendingRequests = async () => {
+  isFetchingRequests.value = true;
+  try {
+    const { data } = await GroupMembersAPI.getPendingRequests(props.contact.id);
+    pendingRequests.value = data.payload || [];
+  } catch {
+    pendingRequests.value = [];
+  } finally {
+    isFetchingRequests.value = false;
+  }
+};
+
+const handleJoinRequest = async (request, action) => {
+  loadingRequestJid.value = request.jid;
+  try {
+    await GroupMembersAPI.handleJoinRequest(props.contact.id, {
+      participants: [request.jid],
+      request_action: action,
+    });
+    pendingRequests.value = pendingRequests.value.filter(
+      r => r.jid !== request.jid
+    );
+    const msgKey =
+      action === 'approve'
+        ? 'GROUP.JOIN_REQUESTS.APPROVE_SUCCESS'
+        : 'GROUP.JOIN_REQUESTS.REJECT_SUCCESS';
+    useAlert(t(msgKey));
+  } catch {
+    useAlert(t('GROUP.JOIN_REQUESTS.ACTION_ERROR'));
+  } finally {
+    loadingRequestJid.value = null;
+  }
+};
+
 onMounted(() => {
   if (props.contact.id) {
     store.dispatch('groupMembers/fetch', { contactId: props.contact.id });
     fetchInviteLink();
+    fetchPendingRequests();
   }
 });
 </script>
@@ -596,6 +637,65 @@ onMounted(() => {
               :disabled="isRevokingInvite"
               @click="revokeInviteLink"
             />
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Join Requests section -->
+      <div v-if="pendingRequests.length > 0" class="mt-4">
+        <h4 class="mb-2 text-sm font-semibold text-n-slate-11">
+          {{ t('GROUP.JOIN_REQUESTS.SECTION_TITLE') }}
+          <span class="ml-1 text-xs font-normal text-n-slate-10">
+            {{
+              t('GROUP.JOIN_REQUESTS.PENDING_COUNT', {
+                count: pendingRequests.length,
+              })
+            }}
+          </span>
+        </h4>
+        <div class="flex flex-col gap-2">
+          <div
+            v-for="request in pendingRequests"
+            :key="request.jid"
+            class="flex items-center gap-3 py-1"
+          >
+            <Avatar
+              :name="request.name || request.jid"
+              :size="32"
+              rounded-full
+            />
+            <div class="flex flex-col flex-1 min-w-0">
+              <span class="text-sm truncate text-n-slate-12">
+                {{ request.name || request.jid }}
+              </span>
+              <span
+                v-if="request.phone_number || request.jid"
+                class="text-xs text-n-slate-10"
+              >
+                {{ request.phone_number || request.jid }}
+              </span>
+            </div>
+            <span
+              v-if="loadingRequestJid === request.jid"
+              class="i-lucide-loader-2 animate-spin size-4 text-n-slate-10"
+            />
+            <div v-else class="flex items-center gap-1">
+              <NextButton
+                :label="t('GROUP.JOIN_REQUESTS.APPROVE_BUTTON')"
+                icon="i-lucide-check"
+                variant="ghost"
+                size="xs"
+                @click="handleJoinRequest(request, 'approve')"
+              />
+              <NextButton
+                :label="t('GROUP.JOIN_REQUESTS.REJECT_BUTTON')"
+                icon="i-lucide-x"
+                variant="ghost"
+                color="ruby"
+                size="xs"
+                @click="handleJoinRequest(request, 'reject')"
+              />
+            </div>
           </div>
         </div>
       </div>
