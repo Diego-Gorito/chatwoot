@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
+import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
 import Avatar from 'next/avatar/Avatar.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const props = defineProps({
   contact: {
@@ -24,6 +26,18 @@ const members = computed(() => {
 const memberCount = computed(() => members.value.length);
 
 const isFetching = computed(() => uiFlags.value.isFetching);
+const isSyncing = computed(() => uiFlags.value.isSyncing);
+
+const onSync = async () => {
+  try {
+    await store.dispatch('groupMembers/sync', {
+      contactId: props.contact.id,
+    });
+    useAlert(t('GROUP.INFO.SYNC_SUCCESS'));
+  } catch {
+    useAlert(t('GROUP.INFO.SYNC_ERROR'));
+  }
+};
 
 onMounted(() => {
   if (props.contact.id) {
@@ -57,9 +71,20 @@ onMounted(() => {
 
       <!-- Members section -->
       <div class="mt-3">
-        <h4 class="mb-2 text-sm font-semibold text-n-slate-11">
-          {{ t('GROUP.INFO.MEMBER_LIST_TITLE') }}
-        </h4>
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-sm font-semibold text-n-slate-11">
+            {{ t('GROUP.INFO.MEMBER_LIST_TITLE') }}
+          </h4>
+          <NextButton
+            :label="t('GROUP.INFO.SYNC_BUTTON')"
+            icon="i-lucide-refresh-cw"
+            variant="ghost"
+            size="xs"
+            :is-loading="isSyncing"
+            :disabled="isSyncing"
+            @click="onSync"
+          />
+        </div>
 
         <!-- Skeleton loading -->
         <div v-if="isFetching" class="flex flex-col gap-3">
