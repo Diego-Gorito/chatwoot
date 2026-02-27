@@ -62,9 +62,10 @@ module Whatsapp::BaileysHandlers::MessagesUpdate
 
   def update_last_seen_at
     conversation = @message.conversation
-    conversation.agent_last_seen_at = Time.current
-    conversation.assignee_last_seen_at = Time.current if conversation.assignee_id.present?
-    conversation.save!
+    to_update = { agent_last_seen_at: Time.current }
+    to_update[:assignee_last_seen_at] = Time.current if conversation.assignee_id.present?
+
+    conversation.update_columns(to_update) # rubocop:disable Rails/SkipsModelValidations
   end
 
   def status_transition_allowed?(new_status)
