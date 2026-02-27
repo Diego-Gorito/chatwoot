@@ -1,3 +1,10 @@
+## 2026-02-27 - US-012
+- Created app/javascript/dashboard/store/modules/groupMembers.js
+- Added SET_GROUP_MEMBERS_UI_FLAG and SET_GROUP_MEMBERS to mutation-types.js
+- Registered groupMembers module in store/index.js
+- Created flat spec file at store/modules/groupMembers.spec.js
+---
+
 ## 2026-02-27 - US-011
 - Created app/javascript/dashboard/api/groupMembers.js
 - All 11 exported methods following ApiClient patterns
