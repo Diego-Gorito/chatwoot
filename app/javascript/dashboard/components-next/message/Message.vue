@@ -127,11 +127,13 @@ const props = defineProps({
   createdAt: { type: Number, required: true }, // eslint-disable-line vue/no-unused-properties
   currentUserId: { type: Number, required: true }, // eslint-disable-line vue/no-unused-properties
   groupWithNext: { type: Boolean, default: false },
+  groupWithPrevious: { type: Boolean, default: false },
   inboxId: { type: Number, default: null }, // eslint-disable-line vue/no-unused-properties
   inboxSupportsReplyTo: { type: Object, default: () => ({}) },
   inboxSupportsEdit: { type: Boolean, default: false },
   inReplyTo: { type: Object, default: null }, // eslint-disable-line vue/no-unused-properties
   isEmailInbox: { type: Boolean, default: false },
+  isGroupConversation: { type: Boolean, default: false },
   private: { type: Boolean, default: false },
   sender: { type: Object, default: null },
   senderId: { type: Number, default: null },
@@ -502,6 +504,31 @@ const avatarTooltip = computed(() => {
   return `${t('CONVERSATION.SENT_BY')} ${avatarInfo.value.name}`;
 });
 
+// Colors for group sender names, matching AVATAR_COLORS from Avatar component
+const SENDER_NAME_COLORS = {
+  light: ['#C2298A', '#99543A', '#60646C', '#008573', '#4747C2', '#3A5BC7'],
+  dark: ['#FF8DCC', '#FFA366', '#ADB1B8', '#0BD8B6', '#A19EFF', '#9EB1FF'],
+};
+
+const showGroupSenderName = computed(() => {
+  return (
+    props.isGroupConversation &&
+    props.messageType === MESSAGE_TYPES.INCOMING &&
+    !props.groupWithPrevious &&
+    props.sender?.name
+  );
+});
+
+const senderNameStyle = computed(() => {
+  if (!showGroupSenderName.value) return {};
+  const name = props.sender?.name || '';
+  const index = name.length % SENDER_NAME_COLORS.light.length;
+  return {
+    color: SENDER_NAME_COLORS.light[index],
+    '--dark-sender-color': SENDER_NAME_COLORS.dark[index],
+  };
+});
+
 const setupHighlightTimer = () => {
   if (Number(route.query.messageId) !== Number(props.id)) {
     return;
@@ -565,16 +592,24 @@ provideMessageContext({
       >
         <Avatar v-bind="avatarInfo" :size="24" />
       </div>
-      <div
-        class="[grid-area:bubble] flex"
-        :class="{
-          'ltr:ml-8 rtl:mr-8 justify-end': orientation === ORIENTATION.RIGHT,
-          'ltr:mr-8 rtl:ml-8': orientation === ORIENTATION.LEFT,
-          'min-w-0': variant === MESSAGE_VARIANTS.EMAIL,
-        }"
-        @contextmenu="openContextMenu($event)"
-      >
-        <Component :is="componentToRender" />
+      <div class="[grid-area:bubble]" @contextmenu="openContextMenu($event)">
+        <span
+          v-if="showGroupSenderName"
+          class="text-xs font-medium mb-0.5 block ltr:mr-8 rtl:ml-8 dark:!text-[var(--dark-sender-color)]"
+          :style="senderNameStyle"
+        >
+          {{ sender?.name }}
+        </span>
+        <div
+          class="flex"
+          :class="{
+            'ltr:ml-8 rtl:mr-8 justify-end': orientation === ORIENTATION.RIGHT,
+            'ltr:mr-8 rtl:ml-8': orientation === ORIENTATION.LEFT,
+            'min-w-0': variant === MESSAGE_VARIANTS.EMAIL,
+          }"
+        >
+          <Component :is="componentToRender" />
+        </div>
       </div>
       <MessageError
         v-if="contentAttributes.externalError"
