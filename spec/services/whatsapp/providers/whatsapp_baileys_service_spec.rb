@@ -577,6 +577,30 @@ describe Whatsapp::Providers::WhatsappBaileysService do
       end
     end
 
+    context 'when recipient is a group' do
+      let(:group_jid) { '123456789123456789@g.us' }
+
+      it 'uses the group JID as-is without transformation' do
+        stub_request(:post, request_path)
+          .with(
+            headers: stub_headers(whatsapp_channel),
+            body: {
+              jid: group_jid,
+              messageContent: { text: message.content }
+            }.to_json
+          )
+          .to_return(
+            status: 200,
+            headers: { 'Content-Type' => 'application/json' },
+            body: result_body.to_json
+          )
+
+        result = service.send_message(group_jid, message)
+
+        expect(result).to eq('msg_123')
+      end
+    end
+
     context 'when request is unsuccessful' do
       it 'raises ProviderUnavailableError' do
         stub_request(:post, request_path)
@@ -1205,6 +1229,126 @@ describe Whatsapp::Providers::WhatsappBaileysService do
 
         expect(result).to be_nil
       end
+    end
+  end
+
+  describe '#group_metadata' do
+    let(:group_jid) { '123456789123456789@g.us' }
+
+    it 'returns symbolized group metadata on success' do
+      stub_request(:get, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-metadata")
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_jid })
+        .to_return(
+          status: 200,
+          body: {
+            subject: 'Test Group',
+            participants: [
+              { id: '111@lid', phoneNumber: '5511911111111@s.whatsapp.net', admin: 'admin' },
+              { id: '222@lid', phoneNumber: '5511922222222@s.whatsapp.net', admin: nil }
+            ]
+          }.to_json
+        )
+
+      result = service.group_metadata(group_jid)
+
+      expect(result[:subject]).to eq('Test Group')
+      expect(result[:participants].length).to eq(2)
+      expect(result[:participants].first[:admin]).to eq('admin')
+    end
+
+    it 'raises ProviderUnavailableError when the API returns an error' do
+      stub_request(:get, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-metadata")
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_jid })
+        .to_return(status: 404, body: { error: 'Group not found' }.to_json)
+
+      stub_request(:post, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}")
+        .to_return(status: 200)
+
+      expect do
+        service.group_metadata(group_jid)
+      end.to raise_error(Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError)
+    end
+  end
+
+  describe '#sync_group' do
+    let(:group_contact) { create(:contact, account: whatsapp_channel.account, identifier: '123456789@g.us', name: 'Old Group Name') }
+    let(:conversation) { create(:conversation, inbox: whatsapp_channel.inbox, contact: group_contact) }
+    let(:base_url) { "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}" }
+    let(:metadata) do
+      {
+        subject: 'Updated Group Name',
+        desc: 'Group description',
+        owner: '111@lid',
+        ownerPn: '5511911111111',
+        participants: [
+          { id: '111@lid', phoneNumber: '5511911111111@s.whatsapp.net', admin: 'admin' },
+          { id: '222@lid', phoneNumber: '5511922222222@s.whatsapp.net', admin: nil }
+        ]
+      }
+    end
+
+    def stub_group_metadata(body)
+      stub_request(:get, "#{base_url}/group-metadata")
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_contact.identifier })
+        .to_return(status: 200, body: body.to_json)
+    end
+
+    def stub_participant_services(*contacts)
+      allow(Whatsapp::ContactInboxConsolidationService).to receive(:new)
+        .and_return(instance_double(Whatsapp::ContactInboxConsolidationService, perform: nil))
+
+      contact_inboxes = contacts.map do |contact|
+        create(:contact_inbox, inbox: whatsapp_channel.inbox, contact: contact)
+      end
+
+      allow(ContactInboxWithContactBuilder).to receive(:new)
+        .and_return(*contact_inboxes.map { |ci| instance_double(ContactInboxWithContactBuilder, perform: ci) })
+
+      stub_request(:get, %r{/profile-picture-url}).to_return(status: 200, body: {}.to_json)
+    end
+
+    it 'raises ProviderUnavailableError when metadata is blank' do
+      stub_group_metadata({})
+      stub_request(:post, base_url).to_return(status: 200)
+
+      expect { service.sync_group(conversation) }.to raise_error(
+        Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError
+      )
+    end
+
+    it 'updates group contact name and attributes from metadata' do
+      stub_group_metadata(metadata.merge(participants: []))
+
+      service.sync_group(conversation)
+
+      group_contact.reload
+      expect(group_contact.name).to eq('Updated Group Name')
+      expect(group_contact.additional_attributes).to include('description' => 'Group description', 'owner' => '111@lid')
+    end
+
+    it 'creates group members with correct roles from participants' do
+      admin_contact = create(:contact, account: whatsapp_channel.account)
+      member_contact = create(:contact, account: whatsapp_channel.account)
+      stub_group_metadata(metadata)
+      stub_participant_services(admin_contact, member_contact)
+
+      service.sync_group(conversation)
+
+      expect(conversation.group_members.find_by(contact: admin_contact)).to have_attributes(role: 'admin', is_active: true)
+      expect(conversation.group_members.find_by(contact: member_contact)).to have_attributes(role: 'member', is_active: true)
+    end
+
+    it 'deactivates members not present in the participant list' do
+      absent_contact = create(:contact, account: whatsapp_channel.account)
+      create(:conversation_group_member, conversation: conversation, contact: absent_contact, is_active: true)
+      remaining_contact = create(:contact, account: whatsapp_channel.account)
+      stub_group_metadata(metadata.merge(participants: [metadata[:participants].last]))
+      stub_participant_services(remaining_contact)
+
+      service.sync_group(conversation)
+
+      expect(conversation.group_members.find_by(contact: absent_contact).is_active).to be false
+      expect(conversation.group_members.find_by(contact: remaining_contact).is_active).to be true
     end
   end
 

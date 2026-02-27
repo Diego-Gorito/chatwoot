@@ -1,0 +1,85 @@
+parameters:
+  - $ref: '#/components/parameters/account_id'
+  - name: id
+    in: path
+    required: true
+    schema:
+      type: number
+    description: ID of the contact
+
+get:
+  tags:
+    - Contacts
+  operationId: contact-group-members
+  summary: List Group Members
+  description: Lists all active group members across the contact's open/pending group conversations.
+  security:
+    - userApiKey: []
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              payload:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      description: ID of the group member record
+                    role:
+                      type: string
+                      enum: ['member', 'admin']
+                      description: Role of the member in the group
+                    is_active:
+                      type: boolean
+                      description: Whether the member is currently active in the group
+                    conversation_id:
+                      type: number
+                      description: ID of the conversation this membership belongs to
+                    contact:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          description: ID of the member contact
+                        name:
+                          type: string
+                          description: Name of the member contact
+                        phone_number:
+                          type: string
+                          description: Phone number of the member contact
+                        identifier:
+                          type: string
+                          description: Identifier of the member contact
+                        thumbnail:
+                          type: string
+                          description: Thumbnail URL of the member contact
+    '400':
+      description: Bad request — contact is not a group, has no identifier, or no supported inbox found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/bad_request_error'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/bad_request_error'
+    '404':
+      description: Contact not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/bad_request_error'
+    '500':
+      description: Internal server error — channel provider unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/bad_request_error'

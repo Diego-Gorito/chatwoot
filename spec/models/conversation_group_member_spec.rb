@@ -34,6 +34,26 @@ RSpec.describe ConversationGroupMember do
     end
   end
 
+  describe 'scopes' do
+    describe '.active' do
+      it 'returns only active members' do
+        active_member = create(:conversation_group_member, is_active: true)
+        create(:conversation_group_member, :inactive)
+
+        expect(described_class.active).to eq([active_member])
+      end
+    end
+
+    describe '.inactive' do
+      it 'returns only inactive members' do
+        create(:conversation_group_member, is_active: true)
+        inactive_member = create(:conversation_group_member, :inactive)
+
+        expect(described_class.inactive).to eq([inactive_member])
+      end
+    end
+  end
+
   describe 'default values' do
     it 'defaults to member role' do
       member = create(:conversation_group_member)

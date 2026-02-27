@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_05_040643) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_11_200624) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -655,6 +655,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_05_040643) do
     t.datetime "updated_at", null: false
     t.index ["contact_id"], name: "index_conversation_group_members_on_contact_id"
     t.index ["conversation_id", "contact_id"], name: "idx_on_conversation_id_contact_id_4eee54a959", unique: true
+    t.index ["conversation_id", "is_active"], name: "idx_on_conversation_id_is_active_7d6f2cc76a"
     t.index ["conversation_id"], name: "index_conversation_group_members_on_conversation_id"
   end
 
