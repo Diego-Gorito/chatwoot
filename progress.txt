@@ -1,3 +1,11 @@
+## 2026-02-27 - US-010
+- Refactored MentionService: separated perform into process_user_team_mentions + process_contact_mentions
+- Contact mentions use mention://contact/ID/EncodedName pattern
+- Stores extracted contact IDs in message.content_attributes['mentioned_contacts'] via update_columns
+- User/team mention behavior unchanged (still gated on private: true)
+- Contact mentions work on any message (private or not)
+---
+
 ## 2026-02-27 - US-009
 - Created GroupJoinRequestsController with index and handle actions
 - index: calls group_join_requests(jid), returns { payload: requests }
