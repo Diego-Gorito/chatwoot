@@ -11,7 +11,7 @@ class GroupMembersAPI extends ApiClient {
   }
 
   syncGroup(contactId) {
-    return axios.get(`${this.url}/${contactId}/sync_group`);
+    return axios.post(`${this.url}/${contactId}/sync_group`);
   }
 
   createGroup(params) {

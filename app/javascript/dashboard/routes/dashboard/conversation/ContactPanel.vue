@@ -94,7 +94,7 @@ const isGroupConversation = computed(
 );
 const sidebarTitle = computed(() =>
   isGroupConversation.value
-    ? 'GROUP.INFO.SIDEBAR_TITLE'
+    ? 'GROUP.SIDEBAR_TITLE'
     : 'CONVERSATION.SIDEBAR.CONTACT'
 );
 
