@@ -6,7 +6,7 @@ import { useTrack } from 'dashboard/composables';
 import { useMapGetter } from 'dashboard/composables/store';
 import { emitter } from 'shared/helpers/mitt';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { LocalStorage } from 'shared/helpers/localStorage';
 import { ACCOUNT_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
@@ -150,6 +150,7 @@ const { t } = useI18n();
 const route = useRoute();
 const inboxGetter = useMapGetter('inboxes/getInbox');
 const inbox = computed(() => inboxGetter.value(props.inboxId) || {});
+const router = useRouter();
 const { replaceInstallationName } = useBranding();
 
 /**
@@ -550,6 +551,17 @@ const senderNameStyle = computed(() => {
   };
 });
 
+const navigateToGroupSender = () => {
+  if (
+    !isGroupIncoming.value ||
+    !props.sender?.id ||
+    props.sender.type?.toLowerCase() !== 'contact'
+  )
+    return;
+  const accountId = route.params.accountId;
+  router.push(`/app/accounts/${accountId}/contacts/${props.sender.id}`);
+};
+
 const setupHighlightTimer = () => {
   if (Number(route.query.messageId) !== Number(props.id)) {
     return;
@@ -609,7 +621,8 @@ provideMessageContext({
       <div
         v-if="showGroupSenderAvatar"
         v-tooltip.right-end="avatarTooltip"
-        class="[grid-area:avatar] flex items-end"
+        class="[grid-area:avatar] flex items-end cursor-pointer"
+        @click="navigateToGroupSender"
       >
         <Avatar v-bind="avatarInfo" :size="24" />
       </div>
@@ -623,8 +636,9 @@ provideMessageContext({
       <div class="[grid-area:bubble]" @contextmenu="openContextMenu($event)">
         <span
           v-if="showGroupSenderName"
-          class="text-xs font-medium mb-0.5 block ltr:mr-8 rtl:ml-8 dark:!text-[var(--dark-sender-color)]"
+          class="text-xs font-medium mb-0.5 block ltr:mr-8 rtl:ml-8 cursor-pointer hover:underline dark:!text-[var(--dark-sender-color)]"
           :style="senderNameStyle"
+          @click="navigateToGroupSender"
         >
           {{ sender?.name }}
         </span>
