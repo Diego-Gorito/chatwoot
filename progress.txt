@@ -372,3 +372,14 @@
   - Contact and Conversation group_type enums use `_prefix: true`, so predicate methods are `group_type_group?` not `group?`
   - When builder classes return early for existing records, ensure downstream handlers enforce required attributes
 ---
+
+## 2026-03-03 - US-029
+- All i18n keys already existed in en/groups.json and pt_BR/groups.json from prior iterations
+- GROUP.INFO.YOU_BADGE, GROUP.SETTINGS.* keys (SECTION_TITLE, ANNOUNCEMENT_MODE, LOCKED_MODE, JOIN_APPROVAL, LEAVE_*, UPDATE_*) all present
+- INBOX_MGMT.TABS.INBOX_CONTACT and INBOX_MGMT.SETTINGS_POPUP.INBOX_CONTACT.* already absent from inboxMgmt.json files
+- Typecheck passes (0 errors, 362 warnings - all pre-existing)
+- No code changes needed
+- **Learnings for future iterations:**
+  - GROUP.SETTINGS description keys use DESCRIPTION suffix (e.g., ANNOUNCEMENT_MODE_DESCRIPTION) not DESC
+  - Always check if i18n keys were already added by prior stories before implementing
+---
