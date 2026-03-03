@@ -418,3 +418,9 @@
 - Routes already configured under contacts scope
 - Rubocop passes, no changes needed
 ---
+
+## 2026-03-03 - US-034
+- inbox_contact_id and link_inbox_contact already removed from all Ruby/jbuilder files
+- No remaining references found in backend code
+- No changes needed
+---
