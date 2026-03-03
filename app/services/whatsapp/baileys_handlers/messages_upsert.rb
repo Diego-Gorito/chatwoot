@@ -51,6 +51,8 @@ module Whatsapp::BaileysHandlers::MessagesUpsert
       handle_membership_request_stub
     when ICON_CHANGE_STUB
       handle_icon_change_stub
+    when GROUP_CREATE_STUB
+      handle_group_create_stub
     end
   ensure
     clear_message_source_id_from_redis if @lock_acquired

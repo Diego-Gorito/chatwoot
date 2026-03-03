@@ -56,6 +56,21 @@ class GroupMembersAPI extends ApiClient {
       params
     );
   }
+
+  leaveGroup(contactId) {
+    return axios.post(`${this.url}/${contactId}/group_settings/leave`);
+  }
+
+  updateGroupSetting(contactId, params) {
+    return axios.patch(`${this.url}/${contactId}/group_settings`, params);
+  }
+
+  toggleJoinApproval(contactId, params) {
+    return axios.post(
+      `${this.url}/${contactId}/group_settings/toggle_join_approval`,
+      params
+    );
+  }
 }
 
 export default new GroupMembersAPI();

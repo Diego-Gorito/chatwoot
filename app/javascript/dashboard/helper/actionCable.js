@@ -4,6 +4,7 @@ import DashboardAudioNotificationHelper from './AudioAlerts/DashboardAudioNotifi
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { emitter } from 'shared/helpers/mitt';
 import { useImpersonation } from 'dashboard/composables/useImpersonation';
+import { pendingGroupNavigation } from 'dashboard/helper/pendingGroupNavigation';
 
 const { isImpersonating } = useImpersonation();
 
@@ -88,6 +89,11 @@ class ActionCableConnector extends BaseActionCableConnector {
   onConversationCreated = data => {
     this.app.$store.dispatch('addConversation', data);
     this.fetchConversationStats();
+
+    const pendingJid = pendingGroupNavigation.consume();
+    if (pendingJid && data.meta?.sender?.identifier === pendingJid) {
+      emitter.emit(BUS_EVENTS.NAVIGATE_TO_GROUP, { conversationId: data.id });
+    }
   };
 
   onConversationRead = data => {

@@ -921,7 +921,7 @@ describe Whatsapp::Providers::WhatsappBaileysService do
           .to_return(
             status: 200,
             headers: { 'Content-Type' => 'application/json' },
-            body: [{ jid: "#{phone_number.delete('+')}@s.whatsapp.net", exists: true }].to_json
+            body: { data: [{ jid: "#{phone_number.delete('+')}@s.whatsapp.net", exists: true }] }.to_json
           )
 
         response = service.on_whatsapp(phone_number)
@@ -935,7 +935,7 @@ describe Whatsapp::Providers::WhatsappBaileysService do
           .to_return(
             status: 200,
             headers: { 'Content-Type' => 'application/json' },
-            body: [].to_json
+            body: { data: [] }.to_json
           )
 
         response = service.on_whatsapp(phone_number)
@@ -1531,6 +1531,141 @@ describe Whatsapp::Providers::WhatsappBaileysService do
     end
   end
 
+  describe '#update_group_participants' do
+    let(:group_jid) { '123456789@g.us' }
+    let(:participant_jid) { '5511999999999@s.whatsapp.net' }
+    let(:request_path) { "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-participants" }
+
+    it 'sends a POST request per participant with singular participant key' do
+      stub_request(:post, request_path)
+        .with(headers: stub_headers(whatsapp_channel), body: { jid: group_jid, participant: participant_jid, action: 'add' }.to_json)
+        .to_return(status: 200)
+
+      service.update_group_participants(group_jid, [participant_jid], 'add')
+
+      expect(WebMock).to have_requested(:post, request_path)
+        .with(body: { jid: group_jid, participant: participant_jid, action: 'add' }.to_json).once
+    end
+
+    it 'makes one call per participant when given multiple' do
+      jid_a = '111@s.whatsapp.net'
+      jid_b = '222@s.whatsapp.net'
+
+      stub_request(:post, request_path).to_return(status: 200)
+
+      service.update_group_participants(group_jid, [jid_a, jid_b], 'remove')
+
+      expect(WebMock).to have_requested(:post, request_path)
+        .with(body: { jid: group_jid, participant: jid_a, action: 'remove' }.to_json).once
+      expect(WebMock).to have_requested(:post, request_path)
+        .with(body: { jid: group_jid, participant: jid_b, action: 'remove' }.to_json).once
+    end
+
+    it 'raises ProviderUnavailableError on failure' do
+      stub_request(:post, request_path).to_return(status: 400, body: 'error')
+      stub_request(:post, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}")
+        .to_return(status: 200)
+      allow(Rails.logger).to receive(:error)
+
+      expect do
+        service.update_group_participants(group_jid, [participant_jid], 'add')
+      end.to raise_error(Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError)
+    end
+  end
+
+  describe '#group_invite_code' do
+    let(:group_jid) { '123456789@g.us' }
+    let(:request_path) { "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-invite-code" }
+
+    it 'returns the inviteCode from response data' do
+      stub_request(:get, request_path)
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_jid })
+        .to_return(status: 200, headers: { 'Content-Type' => 'application/json' },
+                   body: { data: { jid: group_jid, inviteCode: 'ABC123' } }.to_json)
+
+      result = service.group_invite_code(group_jid)
+
+      expect(result).to eq('ABC123')
+    end
+
+    it 'raises ProviderUnavailableError on failure' do
+      stub_request(:get, request_path)
+        .with(query: { jid: group_jid })
+        .to_return(status: 400, body: 'error')
+      stub_request(:post, "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}")
+        .to_return(status: 200)
+      allow(Rails.logger).to receive(:error)
+
+      expect do
+        service.group_invite_code(group_jid)
+      end.to raise_error(Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError)
+    end
+  end
+
+  describe '#revoke_group_invite' do
+    let(:group_jid) { '123456789@g.us' }
+    let(:request_path) { "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-revoke-invite" }
+
+    it 'returns the inviteCode from response data' do
+      stub_request(:post, request_path)
+        .with(headers: stub_headers(whatsapp_channel), body: { jid: group_jid }.to_json)
+        .to_return(status: 200, headers: { 'Content-Type' => 'application/json' },
+                   body: { data: { jid: group_jid, inviteCode: 'NEW456' } }.to_json)
+
+      result = service.revoke_group_invite(group_jid)
+
+      expect(result).to eq('NEW456')
+    end
+  end
+
+  describe '#group_join_requests' do
+    let(:group_jid) { '123456789@g.us' }
+    let(:request_path) do
+      "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-request-participants-list"
+    end
+
+    it 'sends GET to group-request-participants-list and returns data' do
+      stub_request(:get, request_path)
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_jid })
+        .to_return(status: 200, headers: { 'Content-Type' => 'application/json' },
+                   body: { data: [{ jid: '999@s.whatsapp.net' }] }.to_json)
+
+      result = service.group_join_requests(group_jid)
+
+      expect(result).to eq([{ 'jid' => '999@s.whatsapp.net' }])
+    end
+
+    it 'returns empty array when data is nil' do
+      stub_request(:get, request_path)
+        .with(query: { jid: group_jid })
+        .to_return(status: 200, headers: { 'Content-Type' => 'application/json' }, body: {}.to_json)
+
+      result = service.group_join_requests(group_jid)
+
+      expect(result).to eq([])
+    end
+  end
+
+  describe '#handle_group_join_requests' do
+    let(:group_jid) { '123456789@g.us' }
+    let(:participants) { ['999@s.whatsapp.net'] }
+    let(:request_path) do
+      "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/group-request-participants-update"
+    end
+
+    it 'sends POST to group-request-participants-update with participants array' do
+      stub_request(:post, request_path)
+        .with(headers: stub_headers(whatsapp_channel),
+              body: { jid: group_jid, participants: participants, action: 'approve' }.to_json)
+        .to_return(status: 200)
+
+      service.handle_group_join_requests(group_jid, participants, 'approve')
+
+      expect(WebMock).to have_requested(:post, request_path)
+        .with(body: { jid: group_jid, participants: participants, action: 'approve' }.to_json).once
+    end
+  end
+
   describe '#sync_group' do
     let(:group_contact) { create(:contact, account: whatsapp_channel.account, identifier: '123456789@g.us', name: 'Old Group Name') }
     let(:conversation) { create(:conversation, inbox: whatsapp_channel.inbox, contact: group_contact) }
@@ -1546,6 +1681,12 @@ describe Whatsapp::Providers::WhatsappBaileysService do
           { id: '222@lid', phoneNumber: '5511922222222@s.whatsapp.net', admin: nil }
         ]
       }
+    end
+
+    before do
+      stub_request(:get, "#{base_url}/group-invite-code")
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_contact.identifier })
+        .to_return(status: 200, body: { code: 'ABC123' }.to_json)
     end
 
     def stub_group_metadata(body)

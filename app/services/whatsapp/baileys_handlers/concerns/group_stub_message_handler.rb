@@ -1,6 +1,7 @@
 module Whatsapp::BaileysHandlers::Concerns::GroupStubMessageHandler
   MEMBERSHIP_REQUEST_STUB = 'GROUP_MEMBERSHIP_JOIN_APPROVAL_REQUEST_NON_ADMIN_ADD'.freeze
   ICON_CHANGE_STUB = 'GROUP_CHANGE_ICON'.freeze
+  GROUP_CREATE_STUB = 'GROUP_CREATE'.freeze
 
   private
 
@@ -31,6 +32,32 @@ module Whatsapp::BaileysHandlers::Concerns::GroupStubMessageHandler
       author_name = resolve_author_name(participant_jid)
       create_group_activity(conversation, 'icon_changed', author_name: author_name)
     end
+  end
+
+  def handle_group_create_stub
+    group_jid = @raw_message[:key][:remoteJid]
+    group_name = @raw_message[:messageStubParameters]&.first
+
+    with_contact_lock(group_jid) do
+      group_contact_inbox = ::ContactInboxWithContactBuilder.new(
+        source_id: group_jid,
+        inbox: inbox,
+        contact_attributes: {
+          name: group_name || group_jid,
+          identifier: group_jid,
+          group_type: :group
+        }
+      ).perform
+
+      conversation = find_or_create_group_conversation(group_contact_inbox)
+      sync_newly_created_group(conversation)
+    end
+  end
+
+  def sync_newly_created_group(conversation)
+    inbox.channel.sync_group(conversation)
+  rescue StandardError => e
+    Rails.logger.error "[GROUP_CREATE] Failed to sync group #{conversation.contact.identifier}: #{e.message}"
   end
 
   def parse_membership_request_action(stub_params)

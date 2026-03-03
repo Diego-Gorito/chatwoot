@@ -165,6 +165,9 @@ export default {
     groupContactId() {
       return this.currentChat?.meta?.sender?.id || null;
     },
+    inboxPhoneNumber() {
+      return this.inbox?.phone_number || null;
+    },
     shouldShowReplyToMessage() {
       return (
         this.inReplyTo?.id &&
@@ -1346,6 +1349,7 @@ export default {
           :medium="inbox.medium"
           :is-group-conversation="isGroupConversation"
           :group-contact-id="groupContactId"
+          :inbox-phone-number="inboxPhoneNumber"
           @typing-off="onTypingOff"
           @typing-on="onTypingOn"
           @focus="onFocus"

@@ -183,6 +183,9 @@ class Channel::Whatsapp < ApplicationRecord
   delegate :revoke_group_invite, to: :provider_service
   delegate :group_join_requests, to: :provider_service
   delegate :handle_group_join_requests, to: :provider_service
+  delegate :group_leave, to: :provider_service
+  delegate :group_setting_update, to: :provider_service
+  delegate :group_join_approval_mode, to: :provider_service
 
   def setup_webhooks
     perform_webhook_setup

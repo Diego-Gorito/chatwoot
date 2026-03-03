@@ -119,15 +119,15 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
   end
 
   def update_group_participants(group_jid, participants, action)
-    response = HTTParty.patch(
-      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-participants",
-      headers: api_headers,
-      body: { jid: group_jid, participants: participants, action: action }.to_json
-    )
+    Array(participants).each do |participant|
+      response = HTTParty.post(
+        "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-participants",
+        headers: api_headers,
+        body: { jid: group_jid, participant: participant, action: action }.to_json
+      )
 
-    raise ProviderUnavailableError unless process_response(response)
-
-    response.parsed_response
+      raise ProviderUnavailableError unless process_response(response)
+    end
   end
 
   def group_invite_code(group_jid)
@@ -140,7 +140,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
 
     raise ProviderUnavailableError unless process_response(response)
 
-    response.parsed_response&.dig('data', 'code')
+    response.parsed_response&.dig('data', 'inviteCode')
   end
 
   def revoke_group_invite(group_jid)
@@ -152,12 +152,12 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
 
     raise ProviderUnavailableError unless process_response(response)
 
-    response.parsed_response&.dig('data', 'code')
+    response.parsed_response&.dig('data', 'inviteCode')
   end
 
   def group_join_requests(group_jid)
     response = HTTParty.get(
-      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-join-requests",
+      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-request-participants-list",
       headers: api_headers,
       query: { jid: group_jid },
       format: :json
@@ -170,9 +170,39 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
 
   def handle_group_join_requests(group_jid, participants, action)
     response = HTTParty.post(
-      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-join-requests-handle",
+      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-request-participants-update",
       headers: api_headers,
       body: { jid: group_jid, participants: participants, action: action }.to_json
+    )
+
+    raise ProviderUnavailableError unless process_response(response)
+  end
+
+  def group_leave(group_jid)
+    response = HTTParty.post(
+      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-leave",
+      headers: api_headers,
+      body: { jid: group_jid }.to_json
+    )
+
+    raise ProviderUnavailableError unless process_response(response)
+  end
+
+  def group_setting_update(group_jid, setting)
+    response = HTTParty.post(
+      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-setting-update",
+      headers: api_headers,
+      body: { jid: group_jid, setting: setting }.to_json
+    )
+
+    raise ProviderUnavailableError unless process_response(response)
+  end
+
+  def group_join_approval_mode(group_jid, mode)
+    response = HTTParty.post(
+      "#{provider_url}/connections/#{whatsapp_channel.phone_number}/group-join-approval-mode",
+      headers: api_headers,
+      body: { jid: group_jid, mode: mode }.to_json
     )
 
     raise ProviderUnavailableError unless process_response(response)
@@ -186,6 +216,8 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
     raise ProviderUnavailableError, 'Could not fetch group metadata' if metadata.blank?
 
     update_group_contact_info(group_contact, metadata)
+    persist_group_settings(group_contact, metadata)
+    persist_invite_code(group_contact)
 
     participant_contacts = build_participant_contacts(metadata[:participants], inbox)
     sync_group_members(conversation, participant_contacts)
@@ -344,7 +376,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
 
     raise ProviderUnavailableError unless process_response(response)
 
-    response.parsed_response&.first || { 'jid' => remote_jid, 'exists' => false }
+    response.parsed_response&.dig('data')&.first || { 'jid' => remote_jid, 'exists' => false }
   end
 
   def delete_message(recipient_id, message)
@@ -555,6 +587,33 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
     end
   end
 
+  TRACKED_GROUP_SETTINGS = {
+    announce: 'announce',
+    restrict: 'restrict',
+    joinApprovalMode: 'join_approval_mode',
+    memberAddMode: 'member_add_mode'
+  }.freeze
+
+  def persist_group_settings(group_contact, metadata)
+    settings = TRACKED_GROUP_SETTINGS.each_with_object({}) do |(api_key, attr_key), hash|
+      hash[attr_key] = metadata[api_key] if metadata.key?(api_key)
+    end
+    return if settings.blank?
+
+    new_attrs = (group_contact.additional_attributes || {}).merge(settings)
+    group_contact.update!(additional_attributes: new_attrs) if new_attrs != group_contact.additional_attributes
+  end
+
+  def persist_invite_code(group_contact)
+    code = group_invite_code(group_contact.identifier)
+    return if code.blank?
+
+    new_attrs = (group_contact.additional_attributes || {}).merge('invite_code' => code)
+    group_contact.update!(additional_attributes: new_attrs) if new_attrs != group_contact.additional_attributes
+  rescue StandardError => e
+    Rails.logger.error "Failed to fetch invite code for group #{group_contact.identifier}: #{e.message}"
+  end
+
   def try_update_participant_avatar(contact)
     return if contact.avatar.attached?
 
@@ -666,5 +725,8 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
                       :sync_group,
                       :on_whatsapp,
                       :delete_message,
-                      :edit_message
+                      :edit_message,
+                      :group_leave,
+                      :group_setting_update,
+                      :group_join_approval_mode
 end

@@ -14,6 +14,10 @@ const props = defineProps({
     type: [Number, String],
     required: true,
   },
+  excludePhoneNumber: {
+    type: String,
+    default: null,
+  },
 });
 
 const emit = defineEmits(['selectAgent']);
@@ -33,6 +37,7 @@ const items = computed(() => {
 
   const memberItems = groupMembers.value
     .filter(member => member.is_active)
+    .filter(member => member.contact?.phone_number !== props.excludePhoneNumber)
     .map(member => ({
       id: member.contact?.id || member.id,
       type: 'contact',

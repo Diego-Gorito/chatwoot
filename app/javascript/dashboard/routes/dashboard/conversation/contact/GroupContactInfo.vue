@@ -24,6 +24,14 @@ const store = useStore();
 const route = useRoute();
 const { t } = useI18n();
 
+// Inbox admin check: determine if the inbox's phone number is an admin in this group
+const currentChat = useMapGetter('getSelectedChat');
+const inboxGetter = useMapGetter('inboxes/getInboxById');
+const inbox = computed(
+  () => inboxGetter.value(currentChat.value?.inbox_id) || {}
+);
+const inboxPhone = computed(() => inbox.value?.phone_number);
+
 const contactProfileLink = computed(
   () => `/app/accounts/${route.params.accountId}/contacts/${props.contact.id}`
 );
@@ -36,6 +44,22 @@ const members = computed(() => {
 });
 
 const memberCount = computed(() => members.value.length);
+
+const isInboxAdmin = computed(() => {
+  if (!inboxPhone.value) return false;
+  const normalized = inboxPhone.value.replace(/^\+/, '');
+  return members.value.some(m => {
+    const memberPhone = m.contact?.phone_number?.replace(/^\+/, '');
+    return memberPhone === normalized && m.role === 'admin';
+  });
+});
+
+const isOwnMember = member => {
+  if (!inboxPhone.value) return false;
+  const normalized = inboxPhone.value.replace(/^\+/, '');
+  const memberPhone = member.contact?.phone_number?.replace(/^\+/, '');
+  return memberPhone === normalized;
+};
 
 const isFetching = computed(() => uiFlags.value.isFetching);
 const isSyncing = computed(() => uiFlags.value.isSyncing);
@@ -161,12 +185,28 @@ const loadingMemberId = ref(null);
 // Invite link state
 const inviteUrl = ref('');
 const isFetchingInvite = ref(false);
-const isRevokingInvite = ref(false);
+const hasInviteLink = computed(() => !!inviteUrl.value);
 
 // Join requests state
 const pendingRequests = ref([]);
 const isFetchingRequests = ref(false);
 const loadingRequestJid = ref(null);
+
+// Group settings state
+const isAnnouncementMode = computed(
+  () => props.contact.additional_attributes?.announce === true
+);
+const isLockedMode = computed(
+  () => props.contact.additional_attributes?.restrict === true
+);
+const isJoinApprovalEnabled = computed(
+  () => props.contact.additional_attributes?.join_approval_mode === true
+);
+const isTogglingAnnouncement = ref(false);
+const isTogglingLocked = ref(false);
+const isTogglingJoinApproval = ref(false);
+const isLeavingGroup = ref(false);
+const showLeaveConfirm = ref(false);
 
 const onSync = async () => {
   try {
@@ -317,7 +357,7 @@ const fetchInviteLink = async () => {
     const { data } = await GroupMembersAPI.getInviteLink(props.contact.id);
     inviteUrl.value = data.invite_url || '';
   } catch {
-    useAlert(t('GROUP.INVITE.FETCH_ERROR'));
+    inviteUrl.value = '';
   } finally {
     isFetchingInvite.value = false;
   }
@@ -325,28 +365,12 @@ const fetchInviteLink = async () => {
 
 const copyInviteLink = async () => {
   try {
-    if (!inviteUrl.value) {
-      await fetchInviteLink();
-    }
     if (inviteUrl.value) {
       await copyTextToClipboard(inviteUrl.value);
       useAlert(t('GROUP.INVITE.COPY_SUCCESS'));
     }
   } catch {
     useAlert(t('GROUP.INVITE.FETCH_ERROR'));
-  }
-};
-
-const revokeInviteLink = async () => {
-  isRevokingInvite.value = true;
-  try {
-    const { data } = await GroupMembersAPI.revokeInviteLink(props.contact.id);
-    inviteUrl.value = data.invite_url || '';
-    useAlert(t('GROUP.INVITE.REVOKE_SUCCESS'));
-  } catch {
-    useAlert(t('GROUP.INVITE.REVOKE_ERROR'));
-  } finally {
-    isRevokingInvite.value = false;
   }
 };
 
@@ -385,9 +409,86 @@ const handleJoinRequest = async (request, action) => {
   }
 };
 
+// Group settings methods
+const toggleAnnouncementMode = async () => {
+  isTogglingAnnouncement.value = true;
+  try {
+    const setting = isAnnouncementMode.value
+      ? 'not_announcement'
+      : 'announcement';
+    await GroupMembersAPI.updateGroupSetting(props.contact.id, { setting });
+    await store.dispatch('contacts/update', {
+      id: props.contact.id,
+      additional_attributes: {
+        ...props.contact.additional_attributes,
+        announce: !isAnnouncementMode.value,
+      },
+    });
+    useAlert(t('GROUP.SETTINGS.UPDATE_SUCCESS'));
+  } catch {
+    useAlert(t('GROUP.SETTINGS.UPDATE_ERROR'));
+  } finally {
+    isTogglingAnnouncement.value = false;
+  }
+};
+
+const toggleLockedMode = async () => {
+  isTogglingLocked.value = true;
+  try {
+    const setting = isLockedMode.value ? 'unlocked' : 'locked';
+    await GroupMembersAPI.updateGroupSetting(props.contact.id, { setting });
+    await store.dispatch('contacts/update', {
+      id: props.contact.id,
+      additional_attributes: {
+        ...props.contact.additional_attributes,
+        restrict: !isLockedMode.value,
+      },
+    });
+    useAlert(t('GROUP.SETTINGS.UPDATE_SUCCESS'));
+  } catch {
+    useAlert(t('GROUP.SETTINGS.UPDATE_ERROR'));
+  } finally {
+    isTogglingLocked.value = false;
+  }
+};
+
+const toggleJoinApproval = async () => {
+  isTogglingJoinApproval.value = true;
+  try {
+    const mode = isJoinApprovalEnabled.value ? 'off' : 'on';
+    await GroupMembersAPI.toggleJoinApproval(props.contact.id, { mode });
+    await store.dispatch('contacts/update', {
+      id: props.contact.id,
+      additional_attributes: {
+        ...props.contact.additional_attributes,
+        join_approval_mode: !isJoinApprovalEnabled.value,
+      },
+    });
+    useAlert(t('GROUP.SETTINGS.UPDATE_SUCCESS'));
+  } catch {
+    useAlert(t('GROUP.SETTINGS.UPDATE_ERROR'));
+  } finally {
+    isTogglingJoinApproval.value = false;
+  }
+};
+
+const leaveGroup = async () => {
+  isLeavingGroup.value = true;
+  try {
+    await GroupMembersAPI.leaveGroup(props.contact.id);
+    showLeaveConfirm.value = false;
+    useAlert(t('GROUP.SETTINGS.LEAVE_SUCCESS'));
+  } catch {
+    useAlert(t('GROUP.SETTINGS.LEAVE_ERROR'));
+  } finally {
+    isLeavingGroup.value = false;
+  }
+};
+
 onMounted(() => {
   if (props.contact.id) {
     store.dispatch('groupMembers/fetch', { contactId: props.contact.id });
+    fetchInviteLink();
     fetchPendingRequests();
   }
 });
@@ -398,10 +499,11 @@ onMounted(() => {
     <div class="flex flex-col w-full gap-2 text-left rtl:text-right">
       <!-- Group header: avatar, name, member count, description -->
       <div class="flex flex-row items-start gap-3">
-        <!-- Clickable avatar for upload -->
+        <!-- Avatar (clickable for upload only when admin) -->
         <div
-          class="relative cursor-pointer group/avatar shrink-0"
-          @click="onAvatarClick"
+          class="relative shrink-0"
+          :class="{ 'cursor-pointer group/avatar': isInboxAdmin }"
+          @click="isInboxAdmin ? onAvatarClick() : undefined"
         >
           <Avatar
             :src="contact.thumbnail"
@@ -410,6 +512,7 @@ onMounted(() => {
             rounded-full
           />
           <div
+            v-if="isInboxAdmin"
             class="absolute inset-0 flex items-center justify-center transition-opacity rounded-full opacity-0 bg-n-alpha-black2 group-hover/avatar:opacity-100"
           >
             <span
@@ -427,8 +530,11 @@ onMounted(() => {
           />
         </div>
         <div class="flex flex-col min-w-0 flex-1">
-          <!-- Inline-editable name -->
-          <div v-if="isEditingName" class="flex items-center gap-1">
+          <!-- Inline-editable name (only when admin) -->
+          <div
+            v-if="isInboxAdmin && isEditingName"
+            class="flex items-center gap-1"
+          >
             <input
               v-model="editNameValue"
               type="text"
@@ -444,8 +550,9 @@ onMounted(() => {
           </div>
           <div v-else class="flex items-center gap-2 min-w-0">
             <h3
-              class="my-0 text-base font-medium capitalize break-words cursor-pointer text-n-slate-12 hover:text-n-brand"
-              @click="startEditName"
+              class="my-0 text-base font-medium capitalize break-words text-n-slate-12"
+              :class="{ 'cursor-pointer hover:text-n-brand': isInboxAdmin }"
+              @click="isInboxAdmin ? startEditName() : undefined"
             >
               {{ contact.name }}
             </h3>
@@ -475,12 +582,12 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Inline-editable description -->
+      <!-- Inline-editable description (only when admin) -->
       <div class="mt-2">
         <label class="text-xs font-semibold text-n-slate-11">
           {{ t('GROUP.METADATA.EDIT_DESCRIPTION_LABEL') }}
         </label>
-        <div v-if="isEditingDescription" class="relative mt-1">
+        <div v-if="isInboxAdmin && isEditingDescription" class="relative mt-1">
           <textarea
             v-model="editDescriptionValue"
             rows="2"
@@ -495,8 +602,9 @@ onMounted(() => {
         </div>
         <p
           v-else
-          class="mt-1 text-sm break-words cursor-pointer text-n-slate-12 hover:text-n-brand"
-          @click="startEditDescription"
+          class="mt-1 text-sm break-words text-n-slate-12"
+          :class="{ 'cursor-pointer hover:text-n-brand': isInboxAdmin }"
+          @click="isInboxAdmin ? startEditDescription() : undefined"
         >
           {{
             contactDescription ||
@@ -513,6 +621,7 @@ onMounted(() => {
           </h4>
           <div class="flex items-center gap-1">
             <NextButton
+              v-if="isInboxAdmin"
               :label="t('GROUP.MEMBERS.ADD_BUTTON')"
               icon="i-lucide-user-plus"
               variant="ghost"
@@ -619,15 +728,21 @@ onMounted(() => {
               >
                 {{ t('GROUP.INFO.ADMIN_BADGE') }}
               </span>
+              <span
+                v-if="isOwnMember(member)"
+                class="px-1.5 py-0.5 text-xs font-medium rounded bg-n-blue-3 text-n-blue-11"
+              >
+                {{ t('GROUP.INFO.YOU_BADGE') }}
+              </span>
             </div>
             <!-- Loading spinner for this member -->
             <span
-              v-if="loadingMemberId === member.id"
+              v-if="isInboxAdmin && loadingMemberId === member.id"
               class="i-lucide-loader-2 animate-spin size-4 text-n-slate-10"
             />
-            <!-- Action menu toggle -->
+            <!-- Action menu toggle (admin only, not for self) -->
             <div
-              v-else
+              v-else-if="isInboxAdmin && !isOwnMember(member)"
               v-on-clickaway="closeMemberMenu"
               class="relative opacity-0 group-hover:opacity-100"
             >
@@ -649,8 +764,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Invite Link section -->
-      <div class="mt-4">
+      <!-- Invite Link section (admin only, when link exists) -->
+      <div v-if="isInboxAdmin && hasInviteLink" class="mt-4">
         <h4 class="mb-2 text-sm font-semibold text-n-slate-11">
           {{ t('GROUP.INVITE.SECTION_TITLE') }}
         </h4>
@@ -660,24 +775,13 @@ onMounted(() => {
             icon="i-lucide-link"
             variant="ghost"
             size="xs"
-            :is-loading="isFetchingInvite"
-            :disabled="isFetchingInvite"
             @click="copyInviteLink"
-          />
-          <NextButton
-            :label="t('GROUP.INVITE.REVOKE_BUTTON')"
-            icon="i-lucide-refresh-cw"
-            variant="ghost"
-            size="xs"
-            :is-loading="isRevokingInvite"
-            :disabled="isRevokingInvite"
-            @click="revokeInviteLink"
           />
         </div>
       </div>
 
-      <!-- Pending Join Requests section -->
-      <div v-if="pendingRequests.length > 0" class="mt-4">
+      <!-- Pending Join Requests section (admin only) -->
+      <div v-if="isInboxAdmin && pendingRequests.length > 0" class="mt-4">
         <h4 class="mb-2 text-sm font-semibold text-n-slate-11">
           {{ t('GROUP.JOIN_REQUESTS.SECTION_TITLE') }}
           <span class="ml-1 text-xs font-normal text-n-slate-10">
@@ -731,6 +835,141 @@ onMounted(() => {
                 @click="handleJoinRequest(request, 'reject')"
               />
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group Settings section (admin only) -->
+      <div v-if="isInboxAdmin" class="mt-4">
+        <h4 class="mb-2 text-sm font-semibold text-n-slate-11">
+          {{ t('GROUP.SETTINGS.SECTION_TITLE') }}
+        </h4>
+        <div class="flex flex-col gap-2">
+          <!-- Announcement Mode -->
+          <div class="flex items-center justify-between py-1">
+            <div class="flex flex-col">
+              <span class="text-sm text-n-slate-12">
+                {{ t('GROUP.SETTINGS.ANNOUNCEMENT_MODE') }}
+              </span>
+              <span class="text-xs text-n-slate-10">
+                {{ t('GROUP.SETTINGS.ANNOUNCEMENT_MODE_DESCRIPTION') }}
+              </span>
+            </div>
+            <button
+              class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors focus:outline-none"
+              :class="isAnnouncementMode ? 'bg-n-brand' : 'bg-n-slate-5'"
+              :disabled="isTogglingAnnouncement"
+              @click="toggleAnnouncementMode"
+            >
+              <span
+                v-if="isTogglingAnnouncement"
+                class="i-lucide-loader-2 animate-spin size-3 absolute left-1/2 -translate-x-1/2 text-n-alpha-white1"
+              />
+              <span
+                v-else
+                class="inline-block size-4 rounded-full bg-white transition-transform"
+                :class="
+                  isAnnouncementMode ? 'translate-x-4' : 'translate-x-0.5'
+                "
+              />
+            </button>
+          </div>
+
+          <!-- Locked Mode -->
+          <div class="flex items-center justify-between py-1">
+            <div class="flex flex-col">
+              <span class="text-sm text-n-slate-12">
+                {{ t('GROUP.SETTINGS.LOCKED_MODE') }}
+              </span>
+              <span class="text-xs text-n-slate-10">
+                {{ t('GROUP.SETTINGS.LOCKED_MODE_DESCRIPTION') }}
+              </span>
+            </div>
+            <button
+              class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors focus:outline-none"
+              :class="isLockedMode ? 'bg-n-brand' : 'bg-n-slate-5'"
+              :disabled="isTogglingLocked"
+              @click="toggleLockedMode"
+            >
+              <span
+                v-if="isTogglingLocked"
+                class="i-lucide-loader-2 animate-spin size-3 absolute left-1/2 -translate-x-1/2 text-n-alpha-white1"
+              />
+              <span
+                v-else
+                class="inline-block size-4 rounded-full bg-white transition-transform"
+                :class="isLockedMode ? 'translate-x-4' : 'translate-x-0.5'"
+              />
+            </button>
+          </div>
+
+          <!-- Join Approval -->
+          <div class="flex items-center justify-between py-1">
+            <div class="flex flex-col">
+              <span class="text-sm text-n-slate-12">
+                {{ t('GROUP.SETTINGS.JOIN_APPROVAL') }}
+              </span>
+              <span class="text-xs text-n-slate-10">
+                {{ t('GROUP.SETTINGS.JOIN_APPROVAL_DESCRIPTION') }}
+              </span>
+            </div>
+            <button
+              class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors focus:outline-none"
+              :class="isJoinApprovalEnabled ? 'bg-n-brand' : 'bg-n-slate-5'"
+              :disabled="isTogglingJoinApproval"
+              @click="toggleJoinApproval"
+            >
+              <span
+                v-if="isTogglingJoinApproval"
+                class="i-lucide-loader-2 animate-spin size-3 absolute left-1/2 -translate-x-1/2 text-n-alpha-white1"
+              />
+              <span
+                v-else
+                class="inline-block size-4 rounded-full bg-white transition-transform"
+                :class="
+                  isJoinApprovalEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                "
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leave Group section -->
+      <div class="mt-4">
+        <div v-if="!showLeaveConfirm">
+          <NextButton
+            :label="t('GROUP.SETTINGS.LEAVE_GROUP')"
+            icon="i-lucide-log-out"
+            variant="ghost"
+            color="ruby"
+            size="xs"
+            @click="showLeaveConfirm = true"
+          />
+        </div>
+        <div
+          v-else
+          class="flex flex-col gap-2 p-3 border rounded-lg border-n-weak"
+        >
+          <p class="text-sm text-n-slate-12">
+            {{ t('GROUP.SETTINGS.LEAVE_CONFIRM') }}
+          </p>
+          <div class="flex items-center gap-2">
+            <NextButton
+              :label="t('GROUP.SETTINGS.LEAVE_CONFIRM_YES')"
+              color="ruby"
+              size="xs"
+              :is-loading="isLeavingGroup"
+              :disabled="isLeavingGroup"
+              @click="leaveGroup"
+            />
+            <NextButton
+              :label="t('GROUP.SETTINGS.LEAVE_CONFIRM_NO')"
+              variant="ghost"
+              size="xs"
+              :disabled="isLeavingGroup"
+              @click="showLeaveConfirm = false"
+            />
           </div>
         </div>
       </div>

@@ -25,7 +25,9 @@ module Whatsapp::BaileysHandlers::GroupsUpdate
 
       update_group_subject(group_contact_inbox, update[:subject], conversation, author_name) if update.key?(:subject)
       update_group_description(conversation, update, author_name) if update.key?(:desc)
+      persist_invite_code_update(conversation, update) if update.key?(:inviteCode)
       create_group_activity(conversation, 'invite_link_reset', author_name: author_name) if update.key?(:inviteCode)
+      persist_settings_changes(conversation, update)
       process_group_settings_changes(conversation, update, author_name)
     end
   end
@@ -63,5 +65,28 @@ module Whatsapp::BaileysHandlers::GroupsUpdate
 
       create_group_activity(conversation, i18n_key, author_name: author_name)
     end
+  end
+
+  def persist_settings_changes(conversation, update)
+    contact = conversation.contact
+    settings = {}
+    TRACKED_SETTINGS.each do |setting|
+      next unless update.key?(setting.to_sym)
+
+      settings[setting.underscore] = update[setting.to_sym]
+    end
+    return if settings.blank?
+
+    new_attrs = (contact.additional_attributes || {}).merge(settings)
+    contact.update!(additional_attributes: new_attrs) if new_attrs != contact.additional_attributes
+  end
+
+  def persist_invite_code_update(conversation, update)
+    contact = conversation.contact
+    invite_code = update[:inviteCode]
+    return if invite_code.blank?
+
+    new_attrs = (contact.additional_attributes || {}).merge('invite_code' => invite_code)
+    contact.update!(additional_attributes: new_attrs) if new_attrs != contact.additional_attributes
   end
 end

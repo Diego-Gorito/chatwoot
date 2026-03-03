@@ -96,6 +96,7 @@ const props = defineProps({
   enableCopilot: { type: Boolean, default: true },
   isGroupConversation: { type: Boolean, default: false },
   groupContactId: { type: [Number, String], default: null },
+  inboxPhoneNumber: { type: String, default: null },
 });
 
 const emit = defineEmits([
@@ -817,6 +818,7 @@ useEmitter(BUS_EVENTS.INSERT_INTO_RICH_EDITOR, insertContentIntoEditor);
       v-if="showUserMentions && isGroupConversation && !isPrivate"
       :search-key="mentionSearchKey"
       :group-contact-id="groupContactId"
+      :exclude-phone-number="inboxPhoneNumber"
       @select-agent="content => insertSpecialContent('mention', content)"
     />
     <TagAgents

@@ -6,6 +6,7 @@
       "MEMBER_COUNT": "{count} membros",
       "MEMBER_LIST_TITLE": "Membros",
       "ADMIN_BADGE": "Admin",
+      "YOU_BADGE": "Você",
       "SYNC_BUTTON": "Sincronizar",
       "SYNC_SUCCESS": "Membros do grupo sincronizados com sucesso.",
       "SYNC_ERROR": "Falha ao sincronizar membros do grupo. Por favor, tente novamente.",
@@ -45,9 +46,6 @@
       "COPY_BUTTON": "Copiar Link",
       "COPY_INVITE_LINK": "Copiar Link de Convite",
       "COPY_SUCCESS": "Link de convite copiado para a área de transferência.",
-      "REVOKE_BUTTON": "Revogar e Regenerar",
-      "REVOKE_SUCCESS": "Link de convite revogado e regenerado.",
-      "REVOKE_ERROR": "Falha ao revogar o link de convite. Por favor, tente novamente.",
       "FETCH_ERROR": "Falha ao carregar o link de convite."
     },
     "MEMBERS": {
@@ -75,6 +73,23 @@
     },
     "MENTION": {
       "DROPDOWN_HEADER": "Membros do Grupo"
+    },
+    "SETTINGS": {
+      "SECTION_TITLE": "Configurações do Grupo",
+      "ANNOUNCEMENT_MODE": "Modo Anúncio",
+      "ANNOUNCEMENT_MODE_DESCRIPTION": "Apenas admins podem enviar mensagens",
+      "LOCKED_MODE": "Modo Trancado",
+      "LOCKED_MODE_DESCRIPTION": "Apenas admins podem editar informações do grupo",
+      "JOIN_APPROVAL": "Aprovação do Admin para Entrar",
+      "JOIN_APPROVAL_DESCRIPTION": "Admins devem aprovar novos membros",
+      "LEAVE_GROUP": "Sair do Grupo",
+      "LEAVE_CONFIRM": "Tem certeza de que deseja sair deste grupo? A conversa será resolvida.",
+      "LEAVE_CONFIRM_YES": "Sair",
+      "LEAVE_CONFIRM_NO": "Cancelar",
+      "LEAVE_SUCCESS": "Você saiu do grupo.",
+      "LEAVE_ERROR": "Falha ao sair do grupo. Por favor, tente novamente.",
+      "UPDATE_SUCCESS": "Configuração do grupo atualizada com sucesso.",
+      "UPDATE_ERROR": "Falha ao atualizar configuração do grupo. Por favor, tente novamente."
     }
   }
 }

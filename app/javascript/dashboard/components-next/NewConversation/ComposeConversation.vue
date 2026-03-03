@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, computed, onMounted, watch } from 'vue';
+import { reactive, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
@@ -20,6 +20,7 @@ import {
   mergeInboxDetails,
 } from 'dashboard/components-next/NewConversation/helpers/composeConversationHelper';
 import { frontendURL, conversationUrl } from 'dashboard/helper/URLHelper';
+import { pendingGroupNavigation } from 'dashboard/helper/pendingGroupNavigation';
 import wootConstants from 'dashboard/constants/globals';
 
 import ComposeNewConversationForm from 'dashboard/components-next/NewConversation/components/ComposeNewConversationForm.vue';
@@ -139,16 +140,10 @@ const createGroup = async ({ inboxId, subject, participants }) => {
       subject,
       participants,
     });
-    const url = frontendURL(
-      conversationUrl({
-        accountId: route.params.accountId,
-        id: data.id,
-      })
-    );
+    pendingGroupNavigation.set(data.group_jid);
     groupFormRef.value?.resetForm();
     discardCompose();
     useAlert(t('GROUP.CREATE.SUCCESS_MESSAGE'));
-    router.push({ path: url });
   } catch {
     useAlert(t('GROUP.CREATE.ERROR_MESSAGE'));
   }
@@ -298,7 +293,24 @@ const onModalBackdropClick = () => {
   handleClickOutside();
 };
 
-onMounted(() => resetContacts());
+const navigateToGroup = ({ conversationId }) => {
+  const url = frontendURL(
+    conversationUrl({
+      accountId: route.params.accountId,
+      id: conversationId,
+    })
+  );
+  router.push({ path: url });
+};
+
+onMounted(() => {
+  resetContacts();
+  emitter.on(BUS_EVENTS.NAVIGATE_TO_GROUP, navigateToGroup);
+});
+
+onUnmounted(() => {
+  emitter.off(BUS_EVENTS.NAVIGATE_TO_GROUP, navigateToGroup);
+});
 
 const keyboardEvents = {
   Escape: {

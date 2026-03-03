@@ -383,3 +383,13 @@
   - GROUP.SETTINGS description keys use DESCRIPTION suffix (e.g., ANNOUNCEMENT_MODE_DESCRIPTION) not DESC
   - Always check if i18n keys were already added by prior stories before implementing
 ---
+
+## 2026-03-03 - US-030
+- Fixed on_whatsapp response parsing: changed from response.parsed_response&.first to response.parsed_response&.dig('data')&.first
+- Updated spec stubs to wrap response in { data: [...] } structure
+- All other AC items (update_group_participants POST, group_invite_code inviteCode, routes) were already correct from prior iterations
+- 85 specs pass, rubocop clean
+- Files changed: whatsapp_baileys_service.rb, whatsapp_baileys_service_spec.rb
+- **Learnings for future iterations:**
+  - Baileys API wraps responses in { data: ... } envelope; always use dig('data') before accessing response payload
+---

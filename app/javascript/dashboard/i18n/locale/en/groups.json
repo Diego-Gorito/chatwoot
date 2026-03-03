@@ -6,6 +6,7 @@
       "MEMBER_COUNT": "{count} members",
       "MEMBER_LIST_TITLE": "Members",
       "ADMIN_BADGE": "Admin",
+      "YOU_BADGE": "You",
       "SYNC_BUTTON": "Sync",
       "SYNC_SUCCESS": "Group members synced successfully.",
       "SYNC_ERROR": "Failed to sync group members. Please try again.",
@@ -45,9 +46,6 @@
       "COPY_BUTTON": "Copy Link",
       "COPY_INVITE_LINK": "Copy Invite Link",
       "COPY_SUCCESS": "Invite link copied to clipboard.",
-      "REVOKE_BUTTON": "Revoke & Regenerate",
-      "REVOKE_SUCCESS": "Invite link revoked and regenerated.",
-      "REVOKE_ERROR": "Failed to revoke invite link. Please try again.",
       "FETCH_ERROR": "Failed to load invite link."
     },
     "MEMBERS": {
@@ -75,6 +73,23 @@
     },
     "MENTION": {
       "DROPDOWN_HEADER": "Group Members"
+    },
+    "SETTINGS": {
+      "SECTION_TITLE": "Group Settings",
+      "ANNOUNCEMENT_MODE": "Announcement Mode",
+      "ANNOUNCEMENT_MODE_DESCRIPTION": "Only admins can send messages",
+      "LOCKED_MODE": "Locked Mode",
+      "LOCKED_MODE_DESCRIPTION": "Only admins can edit group info",
+      "JOIN_APPROVAL": "Admin Approval to Join",
+      "JOIN_APPROVAL_DESCRIPTION": "Admins must approve new members",
+      "LEAVE_GROUP": "Leave Group",
+      "LEAVE_CONFIRM": "Are you sure you want to leave this group? The conversation will be resolved.",
+      "LEAVE_CONFIRM_YES": "Leave",
+      "LEAVE_CONFIRM_NO": "Cancel",
+      "LEAVE_SUCCESS": "You have left the group.",
+      "LEAVE_ERROR": "Failed to leave the group. Please try again.",
+      "UPDATE_SUCCESS": "Group setting updated successfully.",
+      "UPDATE_ERROR": "Failed to update group setting. Please try again."
     }
   }
 }
