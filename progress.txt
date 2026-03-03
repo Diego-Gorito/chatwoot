@@ -436,3 +436,10 @@
 - InboxContact.vue already deleted, no references remain in frontend
 - No changes needed
 ---
+
+## 2026-03-03 - US-037
+- You badge already implemented in GroupContactInfo.vue with isOwnMember check
+- Styled with bg-n-blue-3 text-n-blue-11, shown alongside Admin badge when applicable
+- Uses GROUP.INFO.YOU_BADGE i18n key
+- Manual browser verification needed (no dev-browser skill available)
+---
