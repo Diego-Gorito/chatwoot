@@ -6,8 +6,10 @@ class GroupMembersAPI extends ApiClient {
     super('contacts', { accountScoped: true });
   }
 
-  getGroupMembers(contactId) {
-    return axios.get(`${this.url}/${contactId}/group_members`);
+  getGroupMembers(contactId, page = 1) {
+    return axios.get(`${this.url}/${contactId}/group_members`, {
+      params: { page },
+    });
   }
 
   syncGroup(contactId) {

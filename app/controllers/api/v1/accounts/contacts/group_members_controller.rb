@@ -1,10 +1,20 @@
 class Api::V1::Accounts::Contacts::GroupMembersController < Api::V1::Accounts::Contacts::BaseController
+  DEFAULT_PER_PAGE = 10
+
   def index
     authorize @contact, :show?
 
-    @group_members = GroupMember.active
-                                .where(group_contact: @contact)
-                                .includes(:contact)
+    base_query = GroupMember.active
+                            .where(group_contact: @contact)
+                            .includes(:contact)
+
+    @total_count = base_query.count
+    @page = (params[:page] || 1).to_i
+    @per_page = (params[:per_page] || DEFAULT_PER_PAGE).to_i
+
+    @group_members = base_query.order(role: :desc, id: :asc)
+                               .offset((@page - 1) * @per_page)
+                               .limit(@per_page)
   end
 
   def create

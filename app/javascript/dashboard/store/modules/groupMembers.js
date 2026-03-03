@@ -3,8 +3,10 @@ import GroupMembersAPI from '../../api/groupMembers';
 
 export const state = {
   records: {},
+  meta: {},
   uiFlags: {
     isFetching: false,
+    isFetchingMore: false,
     isSyncing: false,
     isUpdating: false,
     isCreating: false,
@@ -14,6 +16,9 @@ export const state = {
 export const getters = {
   getGroupMembers: _state => contactId => {
     return _state.records[contactId] || [];
+  },
+  getGroupMembersMeta: _state => contactId => {
+    return _state.meta[contactId] || {};
   },
   getUIFlags(_state) {
     return _state.uiFlags;
@@ -37,15 +42,30 @@ export const actions = {
     }
   },
 
-  async fetch({ commit }, { contactId }) {
-    commit(types.SET_GROUP_MEMBERS_UI_FLAG, { isFetching: true });
+  async fetch({ commit }, { contactId, page = 1 }) {
+    const isFirstPage = page === 1;
+    commit(
+      types.SET_GROUP_MEMBERS_UI_FLAG,
+      isFirstPage ? { isFetching: true } : { isFetchingMore: true }
+    );
     try {
-      const { data } = await GroupMembersAPI.getGroupMembers(contactId);
-      commit(types.SET_GROUP_MEMBERS, { contactId, members: data.payload });
+      const { data } = await GroupMembersAPI.getGroupMembers(contactId, page);
+      if (isFirstPage) {
+        commit(types.SET_GROUP_MEMBERS, { contactId, members: data.payload });
+      } else {
+        commit(types.APPEND_GROUP_MEMBERS, {
+          contactId,
+          members: data.payload,
+        });
+      }
+      commit(types.SET_GROUP_MEMBERS_META, { contactId, meta: data.meta });
     } catch (error) {
       throw new Error(error);
     } finally {
-      commit(types.SET_GROUP_MEMBERS_UI_FLAG, { isFetching: false });
+      commit(
+        types.SET_GROUP_MEMBERS_UI_FLAG,
+        isFirstPage ? { isFetching: false } : { isFetchingMore: false }
+      );
     }
   },
 
@@ -121,6 +141,21 @@ export const mutations = {
     _state.records = {
       ..._state.records,
       [contactId]: members,
+    };
+  },
+
+  [types.APPEND_GROUP_MEMBERS](_state, { contactId, members }) {
+    const existing = _state.records[contactId] || [];
+    _state.records = {
+      ..._state.records,
+      [contactId]: [...existing, ...members],
+    };
+  },
+
+  [types.SET_GROUP_MEMBERS_META](_state, { contactId, meta }) {
+    _state.meta = {
+      ..._state.meta,
+      [contactId]: meta,
     };
   },
 };
