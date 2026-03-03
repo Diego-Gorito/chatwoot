@@ -789,7 +789,11 @@ onMounted(async () => {
             <div
               v-else-if="isInboxAdmin && !isOwnMember(member)"
               v-on-clickaway="closeMemberMenu"
-              class="relative opacity-0 group-hover:opacity-100"
+              class="relative"
+              :class="{
+                'opacity-0 group-hover:opacity-100':
+                  activeMenuMemberId !== member.id,
+              }"
             >
               <NextButton
                 icon="i-lucide-ellipsis-vertical"
