@@ -70,12 +70,12 @@ module GroupConversationHandler # rubocop:disable Metrics/ModuleLength
     )
   end
 
-  def add_group_member(conversation, contact, role: :member)
-    return if conversation.blank?
+  def add_group_member(group_contact, contact, role: :member)
+    return if group_contact.blank?
     return if contact.blank?
 
-    member = ConversationGroupMember.find_or_initialize_by(
-      conversation: conversation,
+    member = GroupMember.find_or_initialize_by(
+      group_contact: group_contact,
       contact: contact
     )
 
@@ -83,36 +83,36 @@ module GroupConversationHandler # rubocop:disable Metrics/ModuleLength
     member
   end
 
-  def remove_group_member(conversation, contact)
-    return if conversation.blank?
+  def remove_group_member(group_contact, contact)
+    return if group_contact.blank?
     return if contact.blank?
 
-    member = ConversationGroupMember.find_by(conversation: conversation, contact: contact)
+    member = GroupMember.find_by(group_contact: group_contact, contact: contact)
     member&.update!(is_active: false)
     member
   end
 
-  def update_group_member_role(conversation, contact, role)
-    return if conversation.blank?
+  def update_group_member_role(group_contact, contact, role)
+    return if group_contact.blank?
     return if contact.blank?
     return if role.blank?
 
-    member = ConversationGroupMember.find_by(conversation: conversation, contact: contact)
+    member = GroupMember.find_by(group_contact: group_contact, contact: contact)
     member&.update!(role: role)
     member
   end
 
-  def sync_group_members(conversation, contacts, admins: [])
+  def sync_group_members(group_contact, contacts, admins: [])
     contacts.each do |contact|
       role = admins.include?(contact) ? :admin : :member
-      add_group_member(conversation, contact, role: role)
+      add_group_member(group_contact, contact, role: role)
     end
 
-    current_member_ids = conversation.group_members.active.pluck(:contact_id)
+    current_member_ids = group_contact.group_memberships.active.pluck(:contact_id)
     new_contact_ids = contacts.map(&:id)
     removed_ids = current_member_ids - new_contact_ids
 
-    conversation.group_members.where(contact_id: removed_ids).find_each do |member|
+    group_contact.group_memberships.where(contact_id: removed_ids).find_each do |member|
       member.update!(is_active: false)
     end
   end

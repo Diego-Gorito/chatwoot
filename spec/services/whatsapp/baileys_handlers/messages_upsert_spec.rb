@@ -501,7 +501,7 @@ describe Whatsapp::BaileysHandlers::MessagesUpsert do
       expect(conversation.group_type).to eq('group')
       expect(message.content).to eq('Hello group')
       expect(message.sender).not_to eq(group_contact)
-      expect(conversation.group_members.active.pluck(:contact_id)).to include(message.sender_id)
+      expect(GroupMember.where(group_contact: group_contact).active.pluck(:contact_id)).to include(message.sender_id)
     end
 
     it 'syncs group participants as conversation group members' do
@@ -512,7 +512,8 @@ describe Whatsapp::BaileysHandlers::MessagesUpsert do
       Whatsapp::IncomingMessageBaileysService.new(inbox: inbox, params: params).perform
 
       conversation = inbox.conversations.last
-      members = conversation.group_members.active
+      group_contact = conversation.contact
+      members = GroupMember.where(group_contact: group_contact).active
 
       expect(members.count).to eq(2)
       admin_member = members.find { |m| m.contact.phone_number == '+5511911111111' }

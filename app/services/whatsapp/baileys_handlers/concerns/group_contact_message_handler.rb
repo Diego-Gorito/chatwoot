@@ -61,7 +61,7 @@ module Whatsapp::BaileysHandlers::Concerns::GroupContactMessageHandler # rubocop
       next if contact.blank?
 
       role = participant[:admin].in?(%w[admin superadmin]) ? :admin : :member
-      add_group_member(@conversation, contact, role: role)
+      add_group_member(@group_contact, contact, role: role)
     end
   end
 

@@ -17,25 +17,26 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
     with_contact_lock(group_jid) do
       group_contact_inbox = find_or_create_group_contact_inbox_by_jid(group_jid)
       conversation = find_or_create_group_conversation(group_contact_inbox)
+      group_contact = group_contact_inbox.contact
 
       contacts = participants.filter_map { |participant| find_or_create_participant_contact(participant) }
       return if contacts.empty?
 
-      contacts.each { |contact| apply_participant_action(action, conversation, contact) }
+      contacts.each { |contact| apply_participant_action(action, group_contact, contact) }
       create_participant_activity(conversation, action, contacts, author)
     end
   end
 
-  def apply_participant_action(action, conversation, contact)
+  def apply_participant_action(action, group_contact, contact)
     case action
     when 'add'
-      add_group_member(conversation, contact, role: :member)
+      add_group_member(group_contact, contact, role: :member)
     when 'remove'
-      remove_group_member(conversation, contact)
+      remove_group_member(group_contact, contact)
     when 'promote'
-      update_group_member_role(conversation, contact, :admin)
+      update_group_member_role(group_contact, contact, :admin)
     when 'demote'
-      update_group_member_role(conversation, contact, :member)
+      update_group_member_role(group_contact, contact, :member)
     end
   end
 

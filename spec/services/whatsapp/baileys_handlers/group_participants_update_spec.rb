@@ -32,7 +32,7 @@ describe Whatsapp::BaileysHandlers::GroupParticipantsUpdate do
 
   describe 'add action' do
     it 'adds participants as group members and creates activity message' do
-      conversation, = create_group_conversation
+      conversation, group_contact = create_group_conversation
       author_lid = '99999999'
       author_contact = create(:contact, account: inbox.account, name: 'Admin User')
       create(:contact_inbox, inbox: inbox, contact: author_contact, source_id: author_lid)
@@ -40,7 +40,7 @@ describe Whatsapp::BaileysHandlers::GroupParticipantsUpdate do
       perform(id: group_jid, action: 'add', author: "#{author_lid}@lid",
               participants: [participant('11111111@lid', '5511911111111@s.whatsapp.net')])
 
-      member = conversation.group_members.find_by(contact: Contact.find_by(phone_number: '+5511911111111'))
+      member = GroupMember.find_by(group_contact: group_contact, contact: Contact.find_by(phone_number: '+5511911111111'))
 
       expect(member).to be_is_active
       expect(member.role).to eq('member')
@@ -63,25 +63,25 @@ describe Whatsapp::BaileysHandlers::GroupParticipantsUpdate do
 
   describe 'remove action' do
     it 'deactivates the member and creates activity message' do
-      conversation, = create_group_conversation
+      conversation, group_contact = create_group_conversation
       removed_contact = create(:contact, account: inbox.account, phone_number: '+5511911111111')
       create(:contact_inbox, inbox: inbox, contact: removed_contact, source_id: '11111111')
-      create(:conversation_group_member, conversation: conversation, contact: removed_contact)
+      GroupMember.create!(group_contact: group_contact, contact: removed_contact)
 
       perform(id: group_jid, action: 'remove', author: '99999999@lid',
               participants: [participant('11111111@lid', '5511911111111@s.whatsapp.net')])
 
-      expect(conversation.group_members.find_by(contact: removed_contact)).not_to be_is_active
+      expect(GroupMember.find_by(group_contact: group_contact, contact: removed_contact)).not_to be_is_active
       expect(conversation.messages.activity.last.content).to include('removed')
     end
   end
 
   describe 'leave action (remove by self)' do
     it 'creates leave activity when participant removes themselves' do
-      conversation, = create_group_conversation
+      conversation, group_contact = create_group_conversation
       leaving_contact = create(:contact, account: inbox.account, phone_number: '+5511911111111')
       create(:contact_inbox, inbox: inbox, contact: leaving_contact, source_id: '11111111')
-      create(:conversation_group_member, conversation: conversation, contact: leaving_contact)
+      GroupMember.create!(group_contact: group_contact, contact: leaving_contact)
 
       perform(id: group_jid, action: 'remove', author: '5511911111111@s.whatsapp.net',
               participants: [participant('11111111@lid', '5511911111111@s.whatsapp.net')])
@@ -92,30 +92,30 @@ describe Whatsapp::BaileysHandlers::GroupParticipantsUpdate do
 
   describe 'promote action' do
     it 'updates member role to admin and creates activity message' do
-      conversation, = create_group_conversation
+      conversation, group_contact = create_group_conversation
       contact = create(:contact, account: inbox.account)
       create(:contact_inbox, inbox: inbox, contact: contact, source_id: '11111111')
-      create(:conversation_group_member, conversation: conversation, contact: contact, role: :member)
+      GroupMember.create!(group_contact: group_contact, contact: contact, role: :member)
 
       perform(id: group_jid, action: 'promote', author: '99999999@lid',
               participants: [participant('11111111@lid', '5511911111111@s.whatsapp.net')])
 
-      expect(conversation.group_members.find_by(contact: contact).role).to eq('admin')
+      expect(GroupMember.find_by(group_contact: group_contact, contact: contact).role).to eq('admin')
       expect(conversation.messages.activity.last.content).to include('promoted')
     end
   end
 
   describe 'demote action' do
     it 'updates member role to member and creates activity message' do
-      conversation, = create_group_conversation
+      conversation, group_contact = create_group_conversation
       contact = create(:contact, account: inbox.account)
       create(:contact_inbox, inbox: inbox, contact: contact, source_id: '11111111')
-      create(:conversation_group_member, conversation: conversation, contact: contact, role: :admin)
+      GroupMember.create!(group_contact: group_contact, contact: contact, role: :admin)
 
       perform(id: group_jid, action: 'demote', author: '99999999@lid',
               participants: [participant('11111111@lid', '5511911111111@s.whatsapp.net')])
 
-      expect(conversation.group_members.find_by(contact: contact).role).to eq('member')
+      expect(GroupMember.find_by(group_contact: group_contact, contact: contact).role).to eq('member')
       expect(conversation.messages.activity.last.content).to include('demoted')
     end
   end

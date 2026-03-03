@@ -221,7 +221,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
     try_update_group_avatar(group_contact)
 
     participant_contacts = build_participant_contacts(metadata[:participants], inbox)
-    sync_group_members(conversation, participant_contacts)
+    sync_group_members(group_contact, participant_contacts)
   end
 
   def media_url(media_id)
@@ -574,16 +574,16 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
     group_contact.update!(update_params) if update_params.present?
   end
 
-  def sync_group_members(conversation, participant_contacts)
+  def sync_group_members(group_contact, participant_contacts)
     new_contact_ids = participant_contacts.filter_map do |entry|
       role = entry[:admin].in?(%w[admin superadmin]) ? :admin : :member
-      member = ConversationGroupMember.find_or_initialize_by(conversation: conversation, contact: entry[:contact])
+      member = GroupMember.find_or_initialize_by(group_contact: group_contact, contact: entry[:contact])
       member.assign_attributes(role: role, is_active: true)
       member.save! if member.changed?
       entry[:contact].id
     end
 
-    conversation.group_members.active.where.not(contact_id: new_contact_ids).find_each do |member|
+    group_contact.group_memberships.active.where.not(contact_id: new_contact_ids).find_each do |member|
       member.update!(is_active: false)
     end
   end

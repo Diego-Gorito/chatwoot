@@ -1739,21 +1739,21 @@ describe Whatsapp::Providers::WhatsappBaileysService do
 
       service.sync_group(conversation)
 
-      expect(conversation.group_members.find_by(contact: admin_contact)).to have_attributes(role: 'admin', is_active: true)
-      expect(conversation.group_members.find_by(contact: member_contact)).to have_attributes(role: 'member', is_active: true)
+      expect(GroupMember.find_by(group_contact: group_contact, contact: admin_contact)).to have_attributes(role: 'admin', is_active: true)
+      expect(GroupMember.find_by(group_contact: group_contact, contact: member_contact)).to have_attributes(role: 'member', is_active: true)
     end
 
     it 'deactivates members not present in the participant list' do
       absent_contact = create(:contact, account: whatsapp_channel.account)
-      create(:conversation_group_member, conversation: conversation, contact: absent_contact, is_active: true)
+      GroupMember.create!(group_contact: group_contact, contact: absent_contact, is_active: true)
       remaining_contact = create(:contact, account: whatsapp_channel.account)
       stub_group_metadata(metadata.merge(participants: [metadata[:participants].last]))
       stub_participant_services(remaining_contact)
 
       service.sync_group(conversation)
 
-      expect(conversation.group_members.find_by(contact: absent_contact).is_active).to be false
-      expect(conversation.group_members.find_by(contact: remaining_contact).is_active).to be true
+      expect(GroupMember.find_by(group_contact: group_contact, contact: absent_contact).is_active).to be false
+      expect(GroupMember.find_by(group_contact: group_contact, contact: remaining_contact).is_active).to be true
     end
   end
 
