@@ -235,11 +235,10 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
     contact_inbox.hmac_verified? ? contact.contact_inboxes.where(hmac_verified: true).filter_map(&:pubsub_token) : [contact_inbox.pubsub_token]
   end
 
-  def group_members_data(contact, account)
-    conversations = account.conversations.where(contact_id: contact.id, group_type: :group, status: %i[open pending])
-    ConversationGroupMember.active.where(conversation: conversations).includes(:contact).map do |member|
+  def group_members_data(contact, _account)
+    GroupMember.active.where(group_contact: contact).includes(:contact).map do |member|
       {
-        id: member.id, role: member.role, is_active: member.is_active, conversation_id: member.conversation_id,
+        id: member.id, role: member.role, is_active: member.is_active, group_contact_id: member.group_contact_id,
         contact: { id: member.contact.id, name: member.contact.name, phone_number: member.contact.phone_number,
                    identifier: member.contact.identifier, thumbnail: member.contact.avatar_url }
       }

@@ -206,25 +206,4 @@ RSpec.describe Contact do
       expect(group_contact).to be_group_type_group
     end
   end
-
-  describe 'conversation_group_memberships association' do
-    it 'returns associated group memberships' do
-      contact = create(:contact)
-      membership = create(:conversation_group_member, contact: contact)
-
-      expect(contact.conversation_group_memberships).to eq([membership])
-    end
-  end
-
-  describe 'group_conversations association' do
-    it 'returns conversations through group_memberships' do
-      contact = create(:contact)
-      conversation1 = create(:conversation, group_type: :group, account: contact.account)
-      conversation2 = create(:conversation, group_type: :group, account: contact.account)
-      create(:conversation_group_member, contact: contact, conversation: conversation1)
-      create(:conversation_group_member, contact: contact, conversation: conversation2)
-
-      expect(contact.group_conversations).to contain_exactly(conversation1, conversation2)
-    end
-  end
 end

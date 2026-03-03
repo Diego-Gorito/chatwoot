@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_03_114847) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_03_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -644,19 +644,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_03_114847) do
     t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true
     t.index ["name", "email", "phone_number", "identifier"], name: "index_contacts_on_name_email_phone_number_identifier", opclass: :gin_trgm_ops, using: :gin
     t.index ["phone_number", "account_id"], name: "index_contacts_on_phone_number_and_account_id"
-  end
-
-  create_table "conversation_group_members", force: :cascade do |t|
-    t.bigint "conversation_id", null: false
-    t.bigint "contact_id", null: false
-    t.integer "role", default: 0, null: false
-    t.boolean "is_active", default: true, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["contact_id"], name: "index_conversation_group_members_on_contact_id"
-    t.index ["conversation_id", "contact_id"], name: "idx_on_conversation_id_contact_id_4eee54a959", unique: true
-    t.index ["conversation_id", "is_active"], name: "idx_on_conversation_id_is_active_7d6f2cc76a"
-    t.index ["conversation_id"], name: "index_conversation_group_members_on_conversation_id"
   end
 
   create_table "conversation_participants", force: :cascade do |t|
@@ -1460,8 +1447,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_03_114847) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "conversation_group_members", "contacts"
-  add_foreign_key "conversation_group_members", "conversations"
   add_foreign_key "conversations", "kanban_tasks"
   add_foreign_key "group_members", "contacts"
   add_foreign_key "group_members", "contacts", column: "group_contact_id"
