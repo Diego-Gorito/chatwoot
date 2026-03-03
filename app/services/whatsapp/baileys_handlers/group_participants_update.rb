@@ -24,6 +24,8 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
 
       contacts.each { |contact| apply_participant_action(action, group_contact, contact) }
       create_participant_activity(conversation, action, contacts, author)
+
+      resolve_conversations_if_inbox_left(action, author, contacts, group_contact_inbox)
     end
   end
 
@@ -83,5 +85,24 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
       params[:last_contact_name] = names.last
       I18n.t("conversations.activity.group_participants.#{action}.multiple", **params)
     end
+  end
+
+  def resolve_conversations_if_inbox_left(action, author_jid, contacts, group_contact_inbox)
+    return unless action == 'remove'
+    return unless inbox_phone_in_participants?(contacts)
+
+    effective_action = resolve_effective_action(action, author_jid, contacts)
+    return unless effective_action.in?(%w[leave remove])
+
+    group_contact_inbox.conversations.where(status: %i[open pending]).find_each do |conversation|
+      conversation.update!(status: :resolved)
+    end
+  end
+
+  def inbox_phone_in_participants?(contacts)
+    inbox_phone = inbox.channel.phone_number&.delete('+')
+    return false if inbox_phone.blank?
+
+    contacts.any? { |c| c.phone_number&.delete('+') == inbox_phone }
   end
 end
