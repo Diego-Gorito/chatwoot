@@ -73,7 +73,9 @@ module Whatsapp::BaileysHandlers::Helpers # rubocop:disable Metrics/ModuleLength
     msg = unwrap_ephemeral_message(@raw_message[:message])
     case message_type
     when 'text'
-      msg[:conversation] || msg.dig(:extendedTextMessage, :text)
+      text = msg[:conversation] || msg.dig(:extendedTextMessage, :text)
+      context_info = msg.dig(:extendedTextMessage, :contextInfo)
+      convert_incoming_mentions(text, context_info)
     when 'image'
       msg.dig(:imageMessage, :caption)
     when 'video'
@@ -206,5 +208,11 @@ module Whatsapp::BaileysHandlers::Helpers # rubocop:disable Metrics/ModuleLength
   def clear_message_source_id_from_redis
     key = format(Redis::RedisKeys::MESSAGE_SOURCE_KEY, id: "#{inbox.id}_#{raw_message_id}")
     ::Redis::Alfred.delete(key)
+  end
+
+  def convert_incoming_mentions(text, context_info)
+    return text if text.blank? || context_info.blank?
+
+    Whatsapp::MentionConverterService.convert_incoming_mentions(text, context_info, inbox.account, inbox)
   end
 end

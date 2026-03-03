@@ -70,6 +70,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
       @message_content = attachment_message_content.merge(reply_context)
     elsif @message.outgoing_content.present?
       @message_content = { text: @message.outgoing_content }.merge(reply_context)
+      merge_mention_data
     else
       @message.update!(is_unsupported: true)
       return
@@ -533,6 +534,13 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
   def process_response(response)
     Rails.logger.error response.body unless response.success?
     response.success?
+  end
+
+  def merge_mention_data
+    return if @message.content.blank?
+
+    mention_data = Whatsapp::MentionConverterService.extract_mentions_for_whatsapp(@message.content, whatsapp_channel.account)
+    @message_content.merge!(mention_data) if mention_data.present?
   end
 
   def remote_jid
