@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_27_135739) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_03_114847) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -581,7 +581,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_27_135739) do
     t.datetime "message_templates_last_updated", precision: nil
     t.jsonb "provider_connection", default: {}
     t.index ["phone_number"], name: "index_channel_whatsapp_on_phone_number", unique: true
-    t.index ["provider_connection"], name: "index_channel_whatsapp_provider_connection", where: "((provider)::text = ANY ((ARRAY['baileys'::character varying, 'zapi'::character varying])::text[]))", using: :gin
+    t.index ["provider_connection"], name: "index_channel_whatsapp_provider_connection", where: "((provider)::text = ANY (ARRAY[('baileys'::character varying)::text, ('zapi'::character varying)::text]))", using: :gin
   end
 
   create_table "companies", force: :cascade do |t|
@@ -846,6 +846,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_27_135739) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "group_members", force: :cascade do |t|
+    t.bigint "group_contact_id", null: false
+    t.bigint "contact_id", null: false
+    t.integer "role", default: 0, null: false
+    t.boolean "is_active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_group_members_on_contact_id"
+    t.index ["group_contact_id", "contact_id"], name: "index_group_members_on_group_contact_id_and_contact_id", unique: true
+    t.index ["group_contact_id", "is_active"], name: "index_group_members_on_group_contact_id_and_is_active"
+    t.index ["group_contact_id"], name: "index_group_members_on_group_contact_id"
   end
 
   create_table "inbox_assignment_policies", force: :cascade do |t|
@@ -1450,6 +1463,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_27_135739) do
   add_foreign_key "conversation_group_members", "contacts"
   add_foreign_key "conversation_group_members", "conversations"
   add_foreign_key "conversations", "kanban_tasks"
+  add_foreign_key "group_members", "contacts"
+  add_foreign_key "group_members", "contacts", column: "group_contact_id"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "kanban_account_user_preferences", "account_users"
   add_foreign_key "kanban_audit_events", "accounts"

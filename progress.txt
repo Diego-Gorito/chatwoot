@@ -468,3 +468,14 @@
 - Calls GroupMembersAPI.leaveGroup, shows success/error alerts
 - Manual browser verification needed
 ---
+
+## 2026-03-03 - US-050
+- Created group_members migration with all required columns, indexes, and foreign keys
+- Created GroupMember model with belongs_to :group_contact, belongs_to :contact, enum role, validations, scopes
+- Added group_memberships, group_member_contacts, group_participations associations to Contact model
+- Migration runs, rubocop passes, contact specs pass (30 examples, 0 failures)
+- Files changed: db/migrate/20260303114847_create_group_members.rb (new), app/models/group_member.rb (new), app/models/contact.rb
+- **Learnings for future iterations:**
+  - GroupMember uses group_contact_id (FK to contacts) instead of conversation_id — this is the key design change from ConversationGroupMember
+  - inverse_of required on has_many with custom foreign_key to avoid N+1 queries
+---
