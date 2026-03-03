@@ -424,3 +424,10 @@
 - No remaining references found in backend code
 - No changes needed
 ---
+
+## 2026-03-03 - US-035
+- TagGroupMembers already uses excludePhoneNumber prop with phone_number filtering
+- Editor.vue already uses inboxPhoneNumber prop, passes to TagGroupMembers as exclude-phone-number
+- ReplyBox.vue already computes inboxPhoneNumber from inbox.phone_number
+- No changes needed
+---
