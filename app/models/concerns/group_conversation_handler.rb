@@ -34,8 +34,11 @@ module GroupConversationHandler # rubocop:disable Metrics/ModuleLength
   end
 
   def update_group_contact_info(contact)
+    update_params = {}
     group_name = extract_group_name
-    contact.update!(name: group_name) if group_name.present? && contact.name != group_name
+    update_params[:name] = group_name if group_name.present? && contact.name != group_name
+    update_params[:group_type] = :group unless contact.group_type_group?
+    contact.update!(update_params) if update_params.present?
   end
 
   def find_or_create_sender_contact
@@ -53,7 +56,10 @@ module GroupConversationHandler # rubocop:disable Metrics/ModuleLength
 
   def find_or_create_group_conversation(group_contact_inbox)
     @conversation = group_contact_inbox.conversations.where(status: %i[open pending]).last
-    return @conversation if @conversation.present?
+    if @conversation.present?
+      @conversation.update!(group_type: :group) unless @conversation.group_type_group?
+      return @conversation
+    end
 
     @conversation = ::Conversation.create!(
       account_id: inbox.account_id,
