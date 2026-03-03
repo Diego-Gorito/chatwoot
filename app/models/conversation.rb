@@ -124,8 +124,6 @@ class Conversation < ApplicationRecord
   has_many :attachments, through: :messages
   has_many :reporting_events, dependent: :destroy_async
   has_many :scheduled_messages, dependent: :destroy
-  has_many :group_members, class_name: 'ConversationGroupMember', dependent: :destroy_async
-  has_many :group_contacts, through: :group_members, source: :contact
 
   before_save :ensure_snooze_until_reset
   before_create :determine_conversation_status
