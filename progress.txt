@@ -400,3 +400,15 @@
 - Methods already in with_error_handling list
 - 85 specs pass, no code changes needed
 ---
+
+## 2026-03-03 - US-032
+- Added try_update_group_avatar method to WhatsappBaileysService: fetches profile pic via get_profile_pic(group_contact.identifier) and enqueues Avatar::AvatarFromUrlJob
+- sync_group now calls try_update_group_avatar after persist_invite_code
+- Settings persistence (persist_group_settings) and invite code persistence (persist_invite_code) were already implemented
+- groups_update.rb already had persist_settings_changes and persist_invite_code_update methods
+- Added profile-picture-url stub to sync_group spec before block
+- Files changed: whatsapp_baileys_service.rb, whatsapp_baileys_service_spec.rb
+- **Learnings for future iterations:**
+  - Group avatar uses get_profile_pic with group JID (xxx@g.us) directly, unlike participant avatars that use phone@s.whatsapp.net
+  - sync_group spec before block needs stubs for all external calls: group-invite-code AND profile-picture-url
+---

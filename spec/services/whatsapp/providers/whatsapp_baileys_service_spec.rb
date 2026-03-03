@@ -1687,6 +1687,9 @@ describe Whatsapp::Providers::WhatsappBaileysService do
       stub_request(:get, "#{base_url}/group-invite-code")
         .with(headers: stub_headers(whatsapp_channel), query: { jid: group_contact.identifier })
         .to_return(status: 200, body: { code: 'ABC123' }.to_json)
+      stub_request(:get, "#{base_url}/profile-picture-url")
+        .with(headers: stub_headers(whatsapp_channel), query: { jid: group_contact.identifier })
+        .to_return(status: 200, body: { data: { profilePictureUrl: nil } }.to_json)
     end
 
     def stub_group_metadata(body)

@@ -218,6 +218,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
     update_group_contact_info(group_contact, metadata)
     persist_group_settings(group_contact, metadata)
     persist_invite_code(group_contact)
+    try_update_group_avatar(group_contact)
 
     participant_contacts = build_participant_contacts(metadata[:participants], inbox)
     sync_group_members(conversation, participant_contacts)
@@ -612,6 +613,16 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
     group_contact.update!(additional_attributes: new_attrs) if new_attrs != group_contact.additional_attributes
   rescue StandardError => e
     Rails.logger.error "Failed to fetch invite code for group #{group_contact.identifier}: #{e.message}"
+  end
+
+  def try_update_group_avatar(group_contact)
+    return if group_contact.avatar.attached?
+
+    response = get_profile_pic(group_contact.identifier)
+    profile_pic_url = response&.dig('data', 'profilePictureUrl')
+    ::Avatar::AvatarFromUrlJob.perform_later(group_contact, profile_pic_url) if profile_pic_url
+  rescue StandardError => e
+    Rails.logger.error "Failed to update avatar for group #{group_contact.identifier}: #{e.message}"
   end
 
   def try_update_participant_avatar(contact)
