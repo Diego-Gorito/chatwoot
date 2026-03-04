@@ -50,9 +50,17 @@ module Whatsapp::BaileysHandlers::Concerns::GroupStubMessageHandler
         }
       ).perform
 
+      reset_group_left_flag(group_contact_inbox.contact)
       conversation = find_or_create_group_conversation(group_contact_inbox)
       sync_newly_created_group(conversation)
     end
+  end
+
+  def reset_group_left_flag(group_contact)
+    return unless group_contact.additional_attributes&.dig('group_left')
+
+    new_attrs = (group_contact.additional_attributes || {}).merge('group_left' => false)
+    group_contact.update!(additional_attributes: new_attrs)
   end
 
   def update_group_avatar(group_contact)

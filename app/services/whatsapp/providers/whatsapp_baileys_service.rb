@@ -211,6 +211,9 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
 
   def sync_group(conversation)
     group_contact = conversation.contact
+
+    return true if group_contact.additional_attributes&.dig('group_left')
+
     inbox = conversation.inbox
 
     metadata = group_metadata(group_contact.identifier)
@@ -223,6 +226,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
 
     participant_contacts = build_participant_contacts(metadata[:participants], inbox)
     sync_group_members(group_contact, participant_contacts)
+    persist_sync_status(group_contact)
 
     true
   end
@@ -612,6 +616,14 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
     return if settings.blank?
 
     new_attrs = (group_contact.additional_attributes || {}).merge(settings)
+    group_contact.update!(additional_attributes: new_attrs) if new_attrs != group_contact.additional_attributes
+  end
+
+  def persist_sync_status(group_contact)
+    new_attrs = (group_contact.additional_attributes || {}).merge(
+      'group_last_synced_at' => Time.current.to_i,
+      'group_left' => false
+    )
     group_contact.update!(additional_attributes: new_attrs) if new_attrs != group_contact.additional_attributes
   end
 
