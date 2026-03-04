@@ -107,8 +107,6 @@ export const actions = {
     try {
       await GroupMembersAPI.removeMembers(contactId, memberId);
       await dispatch('fetch', { contactId });
-    } catch (error) {
-      throw new Error(error);
     } finally {
       commit(types.SET_GROUP_MEMBERS_UI_FLAG, { isUpdating: false });
     }
@@ -130,8 +128,6 @@ export const actions = {
     try {
       await GroupMembersAPI.updateMemberRole(contactId, memberId, role);
       await dispatch('fetch', { contactId });
-    } catch (error) {
-      throw new Error(error);
     } finally {
       commit(types.SET_GROUP_MEMBERS_UI_FLAG, { isUpdating: false });
     }

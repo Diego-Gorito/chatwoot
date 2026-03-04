@@ -60,7 +60,8 @@
       "PROMOTE_ERROR": "Falha ao promover membro. Por favor, tente novamente.",
       "DEMOTE_BUTTON": "Rebaixar para Membro",
       "DEMOTE_SUCCESS": "Membro rebaixado para membro.",
-      "DEMOTE_ERROR": "Falha ao rebaixar membro. Por favor, tente novamente."
+      "DEMOTE_ERROR": "Falha ao rebaixar membro. Por favor, tente novamente.",
+      "GROUP_CREATOR_NOT_MODIFIABLE": "Este membro é o criador do grupo e não pode ser removido ou rebaixado."
     },
     "JOIN_REQUESTS": {
       "SECTION_TITLE": "Solicitações Pendentes",

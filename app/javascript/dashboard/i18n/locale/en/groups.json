@@ -60,7 +60,8 @@
       "PROMOTE_ERROR": "Failed to promote member. Please try again.",
       "DEMOTE_BUTTON": "Demote to Member",
       "DEMOTE_SUCCESS": "Member demoted to member.",
-      "DEMOTE_ERROR": "Failed to demote member. Please try again."
+      "DEMOTE_ERROR": "Failed to demote member. Please try again.",
+      "GROUP_CREATOR_NOT_MODIFIABLE": "This member is the group creator and cannot be removed or demoted."
     },
     "JOIN_REQUESTS": {
       "SECTION_TITLE": "Pending Requests",

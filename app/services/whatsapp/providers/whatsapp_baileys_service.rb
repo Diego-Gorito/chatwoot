@@ -3,6 +3,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
 
   class MessageContentTypeNotSupported < StandardError; end
   class ProviderUnavailableError < StandardError; end
+  class GroupParticipantNotAllowedError < StandardError; end
 
   DEFAULT_CLIENT_NAME = ENV.fetch('BAILEYS_PROVIDER_DEFAULT_CLIENT_NAME', nil)
   DEFAULT_URL = ENV.fetch('BAILEYS_PROVIDER_DEFAULT_URL', nil)
@@ -128,6 +129,8 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
       )
 
       raise ProviderUnavailableError unless process_response(response)
+
+      check_participant_errors(response, action)
     end
   end
 
@@ -538,6 +541,18 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
   def process_response(response)
     Rails.logger.error response.body unless response.success?
     response.success?
+  end
+
+  def check_participant_errors(response, action)
+    return unless action.in?(%w[demote remove])
+
+    results = response.parsed_response
+    return unless results.is_a?(Array)
+
+    failed = results.find { |r| r['status'].to_s == '406' }
+    return if failed.blank?
+
+    raise GroupParticipantNotAllowedError, 'group_creator_not_modifiable'
   end
 
   def merge_mention_data

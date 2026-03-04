@@ -387,13 +387,18 @@ const handleMemberAction = async (member, { action }) => {
       });
       useAlert(t('GROUP.MEMBERS.DEMOTE_SUCCESS'));
     }
-  } catch {
-    const errorKeyMap = {
-      remove: 'GROUP.MEMBERS.REMOVE_ERROR',
-      promote: 'GROUP.MEMBERS.PROMOTE_ERROR',
-      demote: 'GROUP.MEMBERS.DEMOTE_ERROR',
-    };
-    useAlert(t(errorKeyMap[action]));
+  } catch (error) {
+    const serverError = error?.response?.data?.error;
+    if (serverError === 'group_creator_not_modifiable') {
+      useAlert(t('GROUP.MEMBERS.GROUP_CREATOR_NOT_MODIFIABLE'));
+    } else {
+      const errorKeyMap = {
+        remove: 'GROUP.MEMBERS.REMOVE_ERROR',
+        promote: 'GROUP.MEMBERS.PROMOTE_ERROR',
+        demote: 'GROUP.MEMBERS.DEMOTE_ERROR',
+      };
+      useAlert(t(errorKeyMap[action]));
+    }
   } finally {
     loadingMemberId.value = null;
   }
