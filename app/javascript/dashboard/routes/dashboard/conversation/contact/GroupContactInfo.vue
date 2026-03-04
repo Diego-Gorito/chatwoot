@@ -422,6 +422,10 @@ const copyInviteLink = async () => {
     if (inviteUrl.value) {
       await copyTextToClipboard(inviteUrl.value);
       useAlert(t('GROUP.INVITE.COPY_SUCCESS'));
+      showAddMember.value = false;
+      addMemberInput.value = '';
+      searchResults.value = [];
+      showSearchDropdown.value = false;
     }
   } catch {
     useAlert(t('GROUP.INVITE.FETCH_ERROR'));
@@ -724,6 +728,15 @@ onMounted(() => {
             v-if="isSearching"
             class="absolute i-lucide-loader-2 animate-spin size-4 text-n-slate-10 right-3 top-2.5"
           />
+          <NextButton
+            v-if="hasInviteLink"
+            :label="t('GROUP.INVITE.COPY_INVITE_LINK')"
+            icon="i-lucide-link"
+            variant="ghost"
+            size="xs"
+            class="mt-1"
+            @click="copyInviteLink"
+          />
           <ul
             v-if="showSearchDropdown"
             class="absolute z-10 w-full mt-1 overflow-y-auto border rounded-lg shadow-lg bg-n-alpha-3 backdrop-blur-[100px] border-n-weak max-h-48"
@@ -853,22 +866,6 @@ onMounted(() => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Invite Link section (admin only, when link exists) -->
-      <div v-if="!isGroupLeft && isInboxAdmin && hasInviteLink" class="mt-4">
-        <h4 class="mb-2 text-sm font-semibold text-n-slate-11">
-          {{ t('GROUP.INVITE.SECTION_TITLE') }}
-        </h4>
-        <div class="flex items-center gap-2">
-          <NextButton
-            :label="t('GROUP.INVITE.COPY_INVITE_LINK')"
-            icon="i-lucide-link"
-            variant="ghost"
-            size="xs"
-            @click="copyInviteLink"
-          />
         </div>
       </div>
 
