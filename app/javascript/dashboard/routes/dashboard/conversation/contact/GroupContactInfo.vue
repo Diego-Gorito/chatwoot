@@ -533,19 +533,24 @@ const leaveGroup = async () => {
   }
 };
 
-onMounted(async () => {
-  if (props.contact.id) {
-    // Show existing members from DB immediately
-    await store.dispatch('groupMembers/fetch', { contactId: props.contact.id });
-    fetchInviteLink();
-    fetchPendingRequests();
+const fetchGroupData = contactId => {
+  if (!contactId) return;
+  store.dispatch('groupMembers/fetch', { contactId });
+  fetchInviteLink();
+  fetchPendingRequests();
+};
 
-    // Silently attempt to sync members in the background; if it fails,
-    // existing members remain displayed without any user-facing error.
-    store
-      .dispatch('groupMembers/sync', { contactId: props.contact.id })
-      .catch(() => {});
+watch(
+  () => props.contact.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      fetchGroupData(newId);
+    }
   }
+);
+
+onMounted(() => {
+  fetchGroupData(props.contact.id);
 });
 </script>
 

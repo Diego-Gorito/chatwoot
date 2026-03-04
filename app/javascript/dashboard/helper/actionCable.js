@@ -204,6 +204,7 @@ class ActionCableConnector extends BaseActionCableConnector {
     this.app.$store.dispatch('groupMembers/setGroupMembers', {
       contactId: data.id,
       members: data.group_members,
+      inboxPhoneNumber: data.inbox_phone_number,
     });
   };
 

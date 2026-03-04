@@ -26,8 +26,17 @@ export const getters = {
 };
 
 export const actions = {
-  setGroupMembers({ commit }, { contactId, members }) {
+  setGroupMembers({ commit }, { contactId, members, inboxPhoneNumber }) {
     commit(types.SET_GROUP_MEMBERS, { contactId, members });
+    commit(types.SET_GROUP_MEMBERS_META, {
+      contactId,
+      meta: {
+        total_count: members.length,
+        page: 1,
+        per_page: members.length,
+        inbox_phone_number: inboxPhoneNumber || null,
+      },
+    });
   },
 
   async createGroup({ commit }, params) {

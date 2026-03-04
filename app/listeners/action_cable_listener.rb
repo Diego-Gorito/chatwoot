@@ -192,7 +192,10 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
 
   def contact_group_synced(event)
     contact, account = extract_contact_and_account(event)
-    payload = contact.push_event_data.merge(group_members: group_members_data(contact, account))
+    payload = contact.push_event_data.merge(
+      group_members: group_members_data(contact, account),
+      inbox_phone_number: contact.group_channel&.phone_number
+    )
 
     broadcast(account, [account_token(account)], CONTACT_GROUP_SYNCED, payload)
   end
