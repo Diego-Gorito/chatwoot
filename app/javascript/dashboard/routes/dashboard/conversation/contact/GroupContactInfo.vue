@@ -135,7 +135,14 @@ const contactDescription = computed(
   () => props.contact.additional_attributes?.description || ''
 );
 
+const isGroupLeft = computed(
+  () => props.contact.additional_attributes?.group_left === true
+);
+
+const canEditGroup = computed(() => isInboxAdmin.value && !isGroupLeft.value);
+
 const startEditName = () => {
+  if (isGroupLeft.value) return;
   editNameValue.value = props.contact.name || '';
   isEditingName.value = true;
 };
@@ -169,6 +176,7 @@ const onNameKeydown = event => {
 };
 
 const startEditDescription = () => {
+  if (isGroupLeft.value) return;
   editDescriptionValue.value = contactDescription.value;
   isEditingDescription.value = true;
 };
@@ -253,10 +261,6 @@ const isTogglingLocked = ref(false);
 const isTogglingJoinApproval = ref(false);
 const isLeavingGroup = ref(false);
 const showLeaveConfirm = ref(false);
-
-const isGroupLeft = computed(
-  () => props.contact.additional_attributes?.group_left === true
-);
 
 // Add member search
 const searchContacts = debounce(
@@ -562,8 +566,8 @@ onMounted(() => {
         <!-- Avatar (clickable for upload only when admin) -->
         <div
           class="relative shrink-0"
-          :class="{ 'cursor-pointer group/avatar': isInboxAdmin }"
-          @click="isInboxAdmin ? onAvatarClick() : undefined"
+          :class="{ 'cursor-pointer group/avatar': canEditGroup }"
+          @click="canEditGroup ? onAvatarClick() : undefined"
         >
           <Avatar
             :src="contact.thumbnail"
@@ -572,7 +576,7 @@ onMounted(() => {
             rounded-full
           />
           <div
-            v-if="isInboxAdmin"
+            v-if="canEditGroup"
             class="absolute inset-0 flex items-center justify-center transition-opacity rounded-full opacity-0 bg-n-alpha-black2 group-hover/avatar:opacity-100"
           >
             <span
@@ -607,7 +611,8 @@ onMounted(() => {
           </div>
           <div v-else class="flex items-center gap-2 min-w-0">
             <h3
-              class="my-0 text-base font-medium capitalize break-words text-n-slate-12 cursor-pointer hover:text-n-brand"
+              class="my-0 text-base font-medium capitalize break-words text-n-slate-12"
+              :class="{ 'cursor-pointer hover:text-n-brand': !isGroupLeft }"
               @click="startEditName"
             >
               {{ contact.name }}
@@ -658,7 +663,8 @@ onMounted(() => {
         </div>
         <p
           v-else
-          class="mt-1 text-sm break-words text-n-slate-12 cursor-pointer hover:text-n-brand"
+          class="mt-1 text-sm break-words text-n-slate-12"
+          :class="{ 'cursor-pointer hover:text-n-brand': !isGroupLeft }"
           @click="startEditDescription"
         >
           {{
