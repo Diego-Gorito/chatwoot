@@ -1,9 +1,17 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
+import { useEventListener } from '@vueuse/core';
 import { debounce } from '@chatwoot/utils';
 import { dynamicTime } from 'shared/helpers/timeHelper';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
@@ -14,6 +22,7 @@ import NextButton from 'dashboard/components-next/button/Button.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
 import Switch from 'dashboard/components-next/switch/Switch.vue';
 import Accordion from 'dashboard/components-next/Accordion/Accordion.vue';
+import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirection.vue';
 
 const props = defineProps({
   contact: {
@@ -235,6 +244,7 @@ const showSearchDropdown = ref(false);
 // Action menu state (per member)
 const activeMenuMemberId = ref(null);
 const loadingMemberId = ref(null);
+const menuPosition = ref({ top: 0, left: 0 });
 
 // Invite link state
 const inviteUrl = ref('');
@@ -347,14 +357,43 @@ const getMemberMenuItems = member => {
   return items;
 };
 
-const toggleMemberMenu = memberId => {
-  activeMenuMemberId.value =
-    activeMenuMemberId.value === memberId ? null : memberId;
+const computeMenuPosition = triggerEl => {
+  if (!triggerEl) return;
+  const rect = triggerEl.getBoundingClientRect();
+  const MENU_WIDTH = 192;
+  const MENU_HEIGHT_ESTIMATE = 96;
+  const PADDING = 8;
+  let top = rect.bottom + 4;
+  let left = rect.right - MENU_WIDTH;
+  if (top + MENU_HEIGHT_ESTIMATE > window.innerHeight - PADDING) {
+    top = rect.top - MENU_HEIGHT_ESTIMATE - 4;
+  }
+  if (left < PADDING) left = PADDING;
+  if (left + MENU_WIDTH > window.innerWidth - PADDING) {
+    left = window.innerWidth - MENU_WIDTH - PADDING;
+  }
+  menuPosition.value = { top, left };
+};
+
+const toggleMemberMenu = (memberId, event) => {
+  if (activeMenuMemberId.value === memberId) {
+    activeMenuMemberId.value = null;
+    return;
+  }
+  activeMenuMemberId.value = memberId;
+  nextTick(() => {
+    const triggerEl = event?.currentTarget || event?.target;
+    computeMenuPosition(triggerEl);
+  });
 };
 
 const closeMemberMenu = () => {
   activeMenuMemberId.value = null;
 };
+
+const activeMember = computed(() =>
+  members.value.find(m => m.id === activeMenuMemberId.value)
+);
 
 const handleMemberAction = async (member, { action }) => {
   activeMenuMemberId.value = null;
@@ -556,6 +595,23 @@ watch(
 onMounted(() => {
   fetchGroupData(props.contact.id);
 });
+
+// Close member menu when sidebar panel scrolls
+const findScrollableAncestor = el => {
+  let node = el?.parentElement;
+  while (node) {
+    const { overflow, overflowY } = getComputedStyle(node);
+    if (/(auto|scroll)/.test(overflow + overflowY)) return node;
+    node = node.parentElement;
+  }
+  return null;
+};
+
+const sidebarScrollRef = ref(null);
+watch(membersScrollRef, el => {
+  if (el) sidebarScrollRef.value = findScrollableAncestor(el);
+});
+useEventListener(sidebarScrollRef, 'scroll', closeMemberMenu);
 </script>
 
 <template>
@@ -767,8 +823,8 @@ onMounted(() => {
         <div
           v-else
           ref="membersScrollRef"
-          v-on-clickaway="closeMemberMenu"
           class="flex flex-col gap-2 max-h-[240px] overflow-y-auto"
+          @scroll="closeMemberMenu"
         >
           <div
             v-for="member in members"
@@ -831,13 +887,7 @@ onMounted(() => {
                 color="slate"
                 variant="ghost"
                 size="xs"
-                @click="toggleMemberMenu(member.id)"
-              />
-              <DropdownMenu
-                v-if="activeMenuMemberId === member.id"
-                :menu-items="getMemberMenuItems(member)"
-                class="ltr:right-0 rtl:left-0 mt-1 w-48 top-full"
-                @action="handleMemberAction(member, $event)"
+                @click="toggleMemberMenu(member.id, $event)"
               />
             </div>
           </div>
@@ -1046,4 +1096,27 @@ onMounted(() => {
       </Accordion>
     </div>
   </div>
+
+  <!-- Teleported member action dropdown -->
+  <TeleportWithDirection to="body">
+    <div
+      v-if="activeMenuMemberId && activeMember"
+      class="fixed inset-0 z-[9998]"
+      @click="closeMemberMenu"
+    />
+    <div
+      v-if="activeMenuMemberId && activeMember"
+      class="fixed z-[9999]"
+      :style="{
+        top: `${menuPosition.top}px`,
+        left: `${menuPosition.left}px`,
+      }"
+    >
+      <DropdownMenu
+        :menu-items="getMemberMenuItems(activeMember)"
+        class="w-48"
+        @action="handleMemberAction(activeMember, $event)"
+      />
+    </div>
+  </TeleportWithDirection>
 </template>
