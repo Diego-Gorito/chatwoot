@@ -346,7 +346,10 @@ const formattedSignature = computed(() => {
 });
 
 watch(showUserMentions, updatedValue => {
-  emit('toggleUserMention', props.isPrivate && updatedValue);
+  emit(
+    'toggleUserMention',
+    (props.isPrivate || props.isGroupConversation) && updatedValue
+  );
 });
 watch(showCannedMenu, updatedValue => {
   emit('toggleCannedMenu', !props.isPrivate && updatedValue);
