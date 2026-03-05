@@ -609,6 +609,8 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
   end
 
   def sync_group_members(group_contact, participant_contacts)
+    return if participant_contacts.blank?
+
     new_contact_ids = participant_contacts.filter_map do |entry|
       role = entry[:admin].in?(%w[admin superadmin]) ? :admin : :member
       member = GroupMember.find_or_initialize_by(group_contact: group_contact, contact: entry[:contact])
@@ -710,6 +712,8 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
         identifier: identifier
       }
     ).perform
+
+    return nil if contact_inbox.blank?
 
     update_participant_contact_info(contact_inbox.contact, phone, identifier)
   end

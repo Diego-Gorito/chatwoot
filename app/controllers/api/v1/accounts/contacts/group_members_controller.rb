@@ -11,8 +11,8 @@ class Api::V1::Accounts::Contacts::GroupMembersController < Api::V1::Accounts::C
                             .includes(:contact)
 
     @total_count = base_query.count
-    @page = (params[:page] || 1).to_i
-    @per_page = (params[:per_page] || DEFAULT_PER_PAGE).to_i
+    @page = [(params[:page] || 1).to_i, 1].max
+    @per_page = (params[:per_page] || DEFAULT_PER_PAGE).to_i.clamp(1, 100)
     @inbox_phone_number = inbox_phone_number
 
     paginated = base_query.order(role: :desc, id: :asc)
@@ -24,9 +24,11 @@ class Api::V1::Accounts::Contacts::GroupMembersController < Api::V1::Accounts::C
 
   def create
     authorize @contact, :update?
+    participants = create_params[:participants]
+    return render json: { error: 'participants_required' }, status: :unprocessable_entity if participants.blank?
 
-    channel.update_group_participants(@contact.identifier, format_participants(params[:participants]), 'add')
-    add_group_members(params[:participants])
+    channel.update_group_participants(@contact.identifier, format_participants(participants), 'add')
+    add_group_members(participants)
     head :ok
   rescue Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError => e
     render json: { error: e.message }, status: :unprocessable_entity
@@ -34,11 +36,13 @@ class Api::V1::Accounts::Contacts::GroupMembersController < Api::V1::Accounts::C
 
   def update
     authorize @contact, :update?
+    role = update_params[:role]
+    return render json: { error: 'invalid_role' }, status: :unprocessable_entity unless %w[admin member].include?(role)
 
     member = group_members.find(params[:member_id])
-    action = params[:role] == 'admin' ? 'promote' : 'demote'
+    action = role == 'admin' ? 'promote' : 'demote'
     channel.update_group_participants(@contact.identifier, [jid_for_member(member)], action)
-    member.update!(role: params[:role])
+    member.update!(role: role)
     head :ok
   rescue Whatsapp::Providers::WhatsappBaileysService::GroupParticipantNotAllowedError
     render json: { error: 'group_creator_not_modifiable' }, status: :unprocessable_entity
@@ -69,6 +73,14 @@ class Api::V1::Accounts::Contacts::GroupMembersController < Api::V1::Accounts::C
 
   def group_members
     GroupMember.where(group_contact: @contact)
+  end
+
+  def create_params
+    params.permit(participants: [])
+  end
+
+  def update_params
+    params.permit(:role)
   end
 
   def channel
@@ -112,7 +124,9 @@ class Api::V1::Accounts::Contacts::GroupMembersController < Api::V1::Accounts::C
   def add_group_members(phone_numbers)
     inbox = @contact.contact_inboxes.first&.inbox
     Array(phone_numbers).each do |phone|
-      normalized = phone.start_with?('+') ? phone : "+#{phone}"
+      normalized = normalize_phone(phone)
+      next if normalized.blank?
+
       contact_inbox = ::ContactInboxWithContactBuilder.new(
         source_id: normalized.delete('+'),
         inbox: inbox,
@@ -123,5 +137,12 @@ class Api::V1::Accounts::Contacts::GroupMembersController < Api::V1::Accounts::C
       member = GroupMember.find_or_initialize_by(group_contact: @contact, contact: contact_inbox.contact)
       member.update!(role: :member, is_active: true) unless member.persisted? && member.is_active?
     end
+  end
+
+  def normalize_phone(phone)
+    cleaned = phone.to_s.strip
+    return nil if cleaned.blank?
+
+    cleaned.start_with?('+') ? cleaned : "+#{cleaned}"
   end
 end

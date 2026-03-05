@@ -90,7 +90,7 @@ module Whatsapp::BaileysHandlers::Concerns::GroupStubMessageHandler
     phone = extract_jid_user(participant_data['pn'])
 
     find_contact_display_name(lid, phone) || format_fallback_name(lid, phone)
-  rescue JSON::ParserError
+  rescue JSON::ParserError, TypeError
     extract_jid_user(@raw_message[:key][:participant])
   end
 

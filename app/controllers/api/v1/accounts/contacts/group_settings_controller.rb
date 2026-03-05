@@ -10,8 +10,12 @@ class Api::V1::Accounts::Contacts::GroupSettingsController < Api::V1::Accounts::
 
   def update
     authorize @contact, :update?
-    channel.group_setting_update(@contact.identifier, params[:setting])
-    update_contact_setting(params[:setting])
+    setting = setting_params[:setting]
+    valid_settings = %w[announcement not_announcement locked unlocked]
+    return render json: { error: 'invalid_setting' }, status: :unprocessable_entity unless setting.in?(valid_settings)
+
+    channel.group_setting_update(@contact.identifier, setting)
+    update_contact_setting(setting)
     head :ok
   rescue Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError => e
     render json: { error: e.message }, status: :unprocessable_entity
@@ -19,14 +23,25 @@ class Api::V1::Accounts::Contacts::GroupSettingsController < Api::V1::Accounts::
 
   def toggle_join_approval
     authorize @contact, :update?
-    channel.group_join_approval_mode(@contact.identifier, params[:mode])
-    update_contact_attribute('join_approval_mode', params[:mode] == 'on')
+    mode = join_approval_params[:mode]
+    return render json: { error: 'invalid_mode' }, status: :unprocessable_entity unless mode.in?(%w[on off])
+
+    channel.group_join_approval_mode(@contact.identifier, mode)
+    update_contact_attribute('join_approval_mode', mode == 'on')
     head :ok
   rescue Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private
+
+  def setting_params
+    params.permit(:setting)
+  end
+
+  def join_approval_params
+    params.permit(:mode)
+  end
 
   def channel
     @channel ||= @contact.group_channel

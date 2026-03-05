@@ -93,6 +93,8 @@ class ActionCableConnector extends BaseActionCableConnector {
     const pendingJid = pendingGroupNavigation.consume();
     if (pendingJid && data.meta?.sender?.identifier === pendingJid) {
       emitter.emit(BUS_EVENTS.NAVIGATE_TO_GROUP, { conversationId: data.id });
+    } else if (pendingJid) {
+      pendingGroupNavigation.set(pendingJid);
     }
   };
 

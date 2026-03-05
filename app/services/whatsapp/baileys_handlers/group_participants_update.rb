@@ -7,12 +7,10 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
 
   def process_group_participants_update
     data = processed_params[:data]
-    group_jid = data[:id]
-    author = data[:author]
-    action = data[:action]
-    participants = data[:participants]
+    return if data.blank?
 
-    return if group_jid.blank? || action.blank? || participants.blank?
+    group_jid, author, action, participants = data.values_at(:id, :author, :action, :participants)
+    return unless valid_participant_update?(group_jid, action, participants)
 
     with_contact_lock(group_jid) do
       group_contact_inbox = find_or_create_group_contact_inbox_by_jid(group_jid)
@@ -27,6 +25,10 @@ module Whatsapp::BaileysHandlers::GroupParticipantsUpdate
 
       resolve_conversations_if_inbox_left(action, author, contacts, group_contact_inbox)
     end
+  end
+
+  def valid_participant_update?(group_jid, action, participants)
+    group_jid.present? && action.present? && participants.present? && action.in?(%w[add remove promote demote])
   end
 
   def apply_participant_action(action, group_contact, contact)

@@ -188,7 +188,7 @@ module Whatsapp::BaileysHandlers::Concerns::GroupContactMessageHandler # rubocop
 
     jid_part = sender_jid.split('@').first
     parts = jid_part.split(':')
-    parts.first if parts.first.match?(/^\d+$/) && parts.length > 1
+    parts.first if parts.first.match?(/^\d+$/)
   end
 
   def baileys_sender_lid

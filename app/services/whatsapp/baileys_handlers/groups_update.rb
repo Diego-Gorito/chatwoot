@@ -45,8 +45,9 @@ module Whatsapp::BaileysHandlers::GroupsUpdate
     desc = update[:desc]
     contact = conversation.contact
 
-    new_attrs = contact.additional_attributes.merge('description' => desc.presence)
-    contact.update!(additional_attributes: new_attrs) if contact.additional_attributes != new_attrs
+    current_attrs = contact.additional_attributes || {}
+    new_attrs = current_attrs.merge('description' => desc.presence)
+    contact.update!(additional_attributes: new_attrs) if current_attrs != new_attrs
 
     if desc.present?
       create_group_activity(conversation, 'description_changed', author_name: author_name)
