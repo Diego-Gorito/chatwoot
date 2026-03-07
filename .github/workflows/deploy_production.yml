@@ -116,7 +116,7 @@ jobs:
       - merge
     steps:
       - name: Trigger EasyPanel Deployment
-        if: ${{ secrets.EASYPANEL_WEBHOOK_URL != '' }}
+        if: ${{ vars.EASYPANEL_ENABLED == 'true' }}
         run: |
           curl -X POST "${{ secrets.EASYPANEL_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
