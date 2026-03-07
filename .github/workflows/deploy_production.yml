@@ -10,9 +10,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  GITHUB_REPO: ghcr.io/${{ github.repository }}
-
 jobs:
   build:
     strategy:
@@ -27,6 +24,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set lowercase repository name
+        run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "GITHUB_REPO=ghcr.io/${REPO_OWNER_LOWER}/${REPO_NAME}" >> $GITHUB_ENV
 
       - name: Prepare
         run: |
@@ -79,6 +82,12 @@ jobs:
     needs:
       - build
     steps:
+      - name: Set lowercase repository name
+        run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "GITHUB_REPO=ghcr.io/${REPO_OWNER_LOWER}/${REPO_NAME}" >> $GITHUB_ENV
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
@@ -100,28 +109,33 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create \
-            -t ghcr.io/${{ github.repository }}:latest \
-            -t ghcr.io/${{ github.repository }}:${{ github.sha }} \
-            $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *)
+            -t ${{ env.GITHUB_REPO }}:latest \
+            -t ${{ env.GITHUB_REPO }}:${{ github.sha }} \
+            $(printf '${{ env.GITHUB_REPO }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          REPO="ghcr.io/${{ github.repository }}"
-          docker buildx imagetools inspect ${REPO}:latest
-          docker buildx imagetools inspect ${REPO}:${{ github.sha }}
+          docker buildx imagetools inspect ${{ env.GITHUB_REPO }}:latest
+          docker buildx imagetools inspect ${{ env.GITHUB_REPO }}:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
     needs:
       - merge
     steps:
+      - name: Set lowercase repository name
+        run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "GITHUB_REPO=ghcr.io/${REPO_OWNER_LOWER}/${REPO_NAME}" >> $GITHUB_ENV
+
       - name: Trigger EasyPanel Deployment
-        if: ${{ vars.EASYPANEL_ENABLED == 'true' }}
+        if: ${{ secrets.EASYPANEL_WEBHOOK_URL != '' }}
         run: |
           curl -X POST "${{ secrets.EASYPANEL_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
             -d '{
-              "image": "ghcr.io/${{ github.repository }}:latest",
+              "image": "${{ env.GITHUB_REPO }}:latest",
               "tag": "latest",
               "commit": "${{ github.sha }}"
             }'
@@ -129,7 +143,7 @@ jobs:
       - name: Deployment notification
         run: |
           echo "✅ Docker image published to GHCR"
-          echo "📦 Image: ghcr.io/${{ github.repository }}:latest"
+          echo "📦 Image: ${{ env.GITHUB_REPO }}:latest"
           echo "🔖 Tag: ${{ github.sha }}"
           if [[ "${{ secrets.EASYPANEL_WEBHOOK_URL }}" != "" ]]; then
             echo "🚀 EasyPanel deployment triggered"
