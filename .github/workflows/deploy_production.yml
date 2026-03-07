@@ -33,12 +33,6 @@ jobs:
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
-      - name: Update version in app.yml
-        run: |
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          echo "Updating version to: $SHORT_SHA"
-          sed -i "s/version: '.*'/version: '$SHORT_SHA'/" config/app.yml
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -140,5 +134,5 @@ jobs:
           if [[ "${{ secrets.EASYPANEL_WEBHOOK_URL }}" != "" ]]; then
             echo "🚀 EasyPanel deployment triggered"
           else
-            echo "⚠️  EasyPanel webhook not configured. Add EASYPANEL_WEBHOOK_URL secret to enable auto-deploy"
+            echo "⚠️  EasyPanel webhook not configured"
           fi
