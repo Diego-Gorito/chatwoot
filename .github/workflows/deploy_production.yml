@@ -130,7 +130,7 @@ jobs:
           echo "GITHUB_REPO=ghcr.io/${REPO_OWNER_LOWER}/${REPO_NAME}" >> $GITHUB_ENV
 
       - name: Trigger EasyPanel Deployment
-        if: secrets.EASYPANEL_WEBHOOK_URL != ''
+        if: ${{ secrets.EASYPANEL_WEBHOOK_URL != '' }}
         run: |
           curl -X POST "${{ secrets.EASYPANEL_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
