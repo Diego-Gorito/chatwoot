@@ -1,0 +1,75 @@
+{
+  "KANBAN_TEMPLATES": {
+    "SALES": {
+      "NAME": "Sales Pipeline",
+      "DESCRIPTION": "Track your sales leads from initial contact to closing the deal.",
+      "STEPS": {
+        "NEW_LEAD": "New Lead",
+        "QUALIFYING": "Qualifying",
+        "PROPOSAL_SENT": "Proposal Sent",
+        "NEGOTIATION": "Negotiation",
+        "LOST": "Lost Opportunity",
+        "WON": "Won Opportunity"
+      },
+      "TASKS": {
+        "NEW_LEAD": "New Lead: Acme Corp",
+        "NEW_LEAD_DESC": "Initial contact made via website.",
+        "QUALIFY_LEAD": "Qualify: TechStart",
+        "QUALIFY_LEAD_DESC": "Assess budget and decision timeline.",
+        "SEND_PROPOSAL": "Send Proposal: MegaCorp",
+        "SEND_PROPOSAL_DESC": "Prepare pricing and terms document.",
+        "NEGOTIATE": "Negotiate: Global Systems",
+        "NEGOTIATE_DESC": "Discuss volume discounts and contract terms.",
+        "CLOSE_DEAL": "Close Deal: InnovateTech",
+        "CLOSE_DEAL_DESC": "Finalize contract and onboarding."
+      }
+    },
+    "SUPPORT": {
+      "NAME": "Support",
+      "DESCRIPTION": "Manage support tickets from creation to resolution.",
+      "STEPS": {
+        "NEW_TICKET": "New Ticket",
+        "IN_ANALYSIS": "Under Analysis",
+        "WAITING_CUSTOMER": "Waiting for Customer",
+        "IN_PROGRESS": "In Progress",
+        "RESOLVED": "Resolved"
+      },
+      "TASKS": {
+        "BUG_REPORT": "Bug Report: Login Issue",
+        "BUG_REPORT_DESC": "User unable to login on mobile.",
+        "FEATURE_REQUEST": "Feature Request: Dark Mode",
+        "FEATURE_REQUEST_DESC": "Customer requested dark theme option.",
+        "BILLING_ISSUE": "Billing Issue: Invoice Query",
+        "BILLING_ISSUE_DESC": "Customer questions about last invoice.",
+        "INTEGRATION_HELP": "Integration Help: API Setup",
+        "INTEGRATION_HELP_DESC": "Customer needs help with API integration.",
+        "FOLLOW_UP": "Follow Up: Pending Response",
+        "FOLLOW_UP_DESC": "Waiting for customer to provide more details."
+      }
+    },
+    "RECRUITMENT": {
+      "NAME": "Recruitment Pipeline",
+      "DESCRIPTION": "Manage your hiring process from application to offer.",
+      "STEPS": {
+        "APPLIED": "Applied",
+        "SCREENING": "Screening",
+        "INTERVIEW": "Interview",
+        "OFFER": "Offer",
+        "REJECTED": "Rejected",
+        "HIRED": "Hired"
+      },
+      "TASKS": {
+        "REVIEW_RESUME": "Review Resume: Jane Smith",
+        "REVIEW_RESUME_DESC": "Check for relevant experience in SaaS.",
+        "PHONE_SCREEN": "Phone Screen: Mike Johnson",
+        "PHONE_SCREEN_DESC": "Assess communication skills and cultural fit.",
+        "TECHNICAL_INTERVIEW": "Technical Interview: Sarah Williams",
+        "TECHNICAL_INTERVIEW_DESC": "Coding challenge and system design.",
+        "FINAL_INTERVIEW": "Final Interview: David Brown",
+        "FINAL_INTERVIEW_DESC": "Meet with leadership team.",
+        "DRAFT_OFFER": "Draft Offer: Emily Davis",
+        "DRAFT_OFFER_DESC": "Prepare compensation package."
+      }
+    }
+  }
+}
