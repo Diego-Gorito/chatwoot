@@ -32,7 +32,7 @@
             <span class="i-lucide-filter size-4"></span>
             Filter
           </button>
-          <button class="flex px-8 items-center gap-2 px-4 py-2 bg-woot-500 hover:bg-woot-600 text-white rounded-xl text-sm font-medium shadow-md shadow-woot-500/20 transition-all">
+          <button class="flex items-center gap-2 px-4 py-2 bg-woot-500 hover:bg-woot-600 text-white rounded-xl text-sm font-medium shadow-md shadow-woot-500/20 transition-all">
             <span class="i-lucide-plus size-4"></span>
             Add Task
           </button>

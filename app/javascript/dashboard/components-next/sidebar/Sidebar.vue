@@ -477,7 +477,7 @@ const menuItems = computed(() => {
     },
     {
       name: 'Kanban 2',
-      label: t('SIDEBAR.KANBAN2') || 'Kanban 2',
+      label: t('SIDEBAR.KANBAN2'),
       icon: 'i-lucide-trello',
       to: accountScopedRoute('kanban2_overview'),
       activeOn: ['kanban2_overview', 'kanban2_board_show'],
