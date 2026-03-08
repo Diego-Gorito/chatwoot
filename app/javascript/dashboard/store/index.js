@@ -59,7 +59,7 @@ import copilotMessages from './captain/copilotMessages';
 import captainScenarios from './captain/scenarios';
 import captainTools from './captain/tools';
 import captainCustomTools from './captain/customTools';
-import kanban from '../../../fazer_ai/app/javascript/kanban/store/modules/kanban';
+import kanban from '../../../fazer_ai/app/javascript/kanban/store/modules/kanban/index.js';
 
 const plugins = [];
 
