@@ -2,7 +2,6 @@
 import { ref, computed, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { shortTimestampFromDate } from 'shared/helpers/timeHelper';
 import kanbanModule from 'kanban/store/modules/kanban';
 import TasksAPI from 'kanban/api/tasks';
@@ -12,14 +11,11 @@ import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import KanbanContextDropdown from './KanbanContextDropdown.vue';
 import KanbanTaskDatePicker from './KanbanTaskDatePicker.vue';
 import ContactDetailsItem from 'dashboard/routes/dashboard/conversation/ContactDetailsItem.vue';
-import BasePaywallModal from 'dashboard/routes/dashboard/settings/components/BasePaywallModal.vue';
 import { useAlert } from 'dashboard/composables';
-import { useAccount } from 'dashboard/composables/useAccount';
 import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 import { useKanban } from '../composables/useKanban';
 import types from 'dashboard/store/mutation-types';
 import { useMapGetter } from 'dashboard/composables/store';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 const props = defineProps({
   conversationId: {
@@ -42,41 +38,10 @@ const props = defineProps({
 
 const store = useStore();
 const { t } = useI18n();
-const router = useRouter();
 const { priorities } = useKanban();
-const { isCloudFeatureEnabled, accountId, isOnChatwootCloud } = useAccount();
 
 const currentUser = useMapGetter('getCurrentUser');
 const accountLabels = useMapGetter('labels/getLabels');
-
-const fazerAiSubscription = computed(
-  () => store.getters['globalConfig/getFazerAiSubscription']
-);
-const isFazerAiSubscriptionActive = computed(() => {
-  // Always return true to bypass paywall
-  return true;
-  // const status = fazerAiSubscription.value?.status;
-  // return ['active', 'past_due', 'trialing'].includes(status);
-});
-
-const isKanbanEnabled = computed(
-  () =>
-    // Always enabled - bypass all checks
-    true
-    // isCloudFeatureEnabled(FEATURE_FLAGS.KANBAN) &&
-    // isFazerAiSubscriptionActive.value
-);
-const isSuperAdmin = computed(() => currentUser.value?.type === 'SuperAdmin');
-const paywallI18nKey = computed(() =>
-  isOnChatwootCloud.value ? 'PAYWALL' : 'ENTERPRISE_PAYWALL'
-);
-
-const openBilling = () => {
-  router.push({
-    name: 'billing_settings_index',
-    params: { accountId: accountId.value },
-  });
-};
 
 if (!store.hasModule('kanban')) {
   store.registerModule('kanban', kanbanModule);
@@ -440,20 +405,8 @@ const handleDueDateChange = date => {
 
 <template>
   <div class="kanban-conversation-panel flex flex-col p-4">
-    <!-- Paywall State -->
-    <template v-if="!isKanbanEnabled">
-      <BasePaywallModal
-        feature-prefix="KANBAN"
-        :i18n-key="paywallI18nKey"
-        :is-super-admin="isSuperAdmin"
-        :is-on-chatwoot-cloud="isOnChatwootCloud"
-        class="!max-w-none !shadow-none !border-0 !px-0 !py-0"
-        @upgrade="openBilling"
-      />
-    </template>
-
-    <!-- Normal Content (when feature is enabled) -->
-    <template v-else>
+    <!-- Kanban Content - Paywall removed -->
+    <template>
       <!-- No Task State -->
       <div v-if="!existingTask && !isCreating" class="multiselect-wrap--small">
         <ContactDetailsItem compact :title="$t('KANBAN.ADD_TO_BOARD')" />

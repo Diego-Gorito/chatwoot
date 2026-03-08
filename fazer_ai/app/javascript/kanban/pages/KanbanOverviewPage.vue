@@ -5,16 +5,12 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useAlert } from 'dashboard/composables';
 import { useAdmin } from 'dashboard/composables/useAdmin';
-import { useAccount } from 'dashboard/composables/useAccount';
-import { useMapGetter } from 'dashboard/composables/store';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import SettingsLayout from 'dashboard/routes/dashboard/settings/SettingsLayout.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ChannelIcon from 'dashboard/components-next/icon/ChannelIcon.vue';
 import ThumbnailGroup from 'dashboard/components/widgets/ThumbnailGroup.vue';
 import KanbanBoardModal from 'kanban/components/KanbanBoardModal.vue';
 import KanbanSortMenu from 'kanban/components/KanbanSortMenu.vue';
-import BasePaywallModal from 'dashboard/routes/dashboard/settings/components/BasePaywallModal.vue';
 import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 import kanbanModule from 'kanban/store/modules/kanban';
 import { useBoardModal } from 'kanban/composables/useBoardModal';
@@ -23,37 +19,6 @@ const store = useStore();
 const router = useRouter();
 const { t } = useI18n();
 const { isAdmin } = useAdmin();
-const { isCloudFeatureEnabled, accountId, isOnChatwootCloud } = useAccount();
-const currentUser = useMapGetter('getCurrentUser');
-
-const fazerAiSubscription = computed(
-  () => store.getters['globalConfig/getFazerAiSubscription']
-);
-const isFazerAiSubscriptionActive = computed(() => {
-  // Always return true to bypass paywall
-  return true;
-  // const status = fazerAiSubscription.value?.status;
-  // return ['active', 'past_due', 'trialing'].includes(status);
-});
-
-const isKanbanEnabled = computed(
-  () =>
-    // Always enabled - bypass all checks
-    true
-    // isCloudFeatureEnabled(FEATURE_FLAGS.KANBAN) &&
-    // isFazerAiSubscriptionActive.value
-);
-const isSuperAdmin = computed(() => currentUser.value?.type === 'SuperAdmin');
-const paywallI18nKey = computed(() =>
-  isOnChatwootCloud.value ? 'PAYWALL' : 'ENTERPRISE_PAYWALL'
-);
-
-const openBilling = () => {
-  router.push({
-    name: 'billing_settings_index',
-    params: { accountId: accountId.value },
-  });
-};
 
 if (!store.hasModule('kanban')) {
   store.registerModule('kanban', kanbanModule);
@@ -187,23 +152,10 @@ const getAssignedInboxes = inboxIds => {
   <div
     class="flex h-full w-full flex-col overflow-hidden bg-n-background font-inter"
   >
-    <!-- Feature Disabled State -->
-    <template v-if="!isKanbanEnabled">
-      <div
-        class="flex items-center justify-center h-full min-h-[400px] px-6 py-12"
-      >
-        <BasePaywallModal
-          feature-prefix="KANBAN"
-          :i18n-key="paywallI18nKey"
-          :is-super-admin="isSuperAdmin"
-          :is-on-chatwoot-cloud="isOnChatwootCloud"
-          @upgrade="openBilling"
-        />
-      </div>
-    </template>
+    <!-- Kanban is now always enabled - paywall removed -->
 
-    <!-- Normal Content (when feature is enabled) -->
-    <template v-else>
+    <!-- Kanban Content -->
+    <template>
       <div
         class="w-full flex justify-center px-6 sm:py-8 lg:px-16 pt-6 sm:pt-8 pb-4"
       >

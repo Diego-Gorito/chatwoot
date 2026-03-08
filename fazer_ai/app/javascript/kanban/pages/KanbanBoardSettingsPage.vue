@@ -24,14 +24,6 @@ const store = useStore();
 const { t } = useI18n();
 const { isAdmin } = useAdmin();
 
-const fazerAiSubscription = computed(
-  () => store.getters['globalConfig/getFazerAiSubscription']
-);
-const isFazerAiSubscriptionActive = computed(() => {
-  const status = fazerAiSubscription.value?.status;
-  return ['active', 'past_due', 'trialing'].includes(status);
-});
-
 if (!store.hasModule('kanban')) {
   store.registerModule('kanban', kanbanModule);
 }
@@ -254,13 +246,7 @@ watch(isDataLoaded, loaded => {
 });
 
 onMounted(async () => {
-  if (!isFazerAiSubscriptionActive.value) {
-    router.replace({
-      name: 'kanban_list',
-      params: { accountId: route.params.accountId },
-    });
-    return;
-  }
+  // Kanban is now always enabled - subscription check removed
 
   if (!isAdmin.value) {
     router.push({
