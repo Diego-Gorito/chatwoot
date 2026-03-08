@@ -33,12 +33,12 @@
     <!-- Footer meta: Assignees & Due Date -->
     <div class="flex items-center justify-between mt-1 pt-3 border-t border-n-weak/50">
       
-      <!-- Simple Assignee Avatar Placeholder -->
-      <div class="flex -space-x-2 overflow-hidden">
-        <div v-if="task.assignee" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-n-slate-3 bg-gradient-to-tr from-woot-400 to-indigo-400 flex items-center justify-center text-[10px] text-white font-bold shadow-sm">
+      <!-- Assignee Avatars (simplified for prototype) -->
+      <div class="flex -space-x-2 overflow-hidden mt-1">
+        <div v-if="task.assignee" class="flex size-6 rounded-full ring-2 ring-white dark:ring-n-slate-3 bg-gradient-to-tr from-woot-400 to-indigo-400 items-center justify-center text-[10px] text-white font-bold shadow-sm">
           {{ initials(task.assignee.name || 'User') }}
         </div>
-        <div v-else class="inline-block size-6 rounded-full border border-dashed border-n-slate-8 bg-n-alpha-1 dark:bg-n-slate-4 flex items-center justify-center text-n-slate-10">
+        <div v-else class="flex size-6 rounded-full border border-dashed border-n-slate-8 bg-n-alpha-1 dark:bg-n-slate-4 items-center justify-center text-n-slate-10">
           <span class="i-lucide-user size-3"></span>
         </div>
       </div>
