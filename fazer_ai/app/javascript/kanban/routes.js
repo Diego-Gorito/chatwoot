@@ -8,7 +8,7 @@ export default {
   path: 'kanban',
   name: 'kanban',
   meta: {
-    permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
+    permissions: ROLES,
   },
   component: () => import('./Index.vue'),
   children: [
@@ -17,7 +17,7 @@ export default {
       name: 'kanban_list',
       component: KanbanOverviewPage,
       meta: {
-        permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
+        permissions: ROLES,
       },
     },
     {
@@ -25,7 +25,7 @@ export default {
       name: 'kanban_board_show',
       component: KanbanBoardPage,
       meta: {
-        permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
+        permissions: ROLES,
       },
       children: [
         {
@@ -33,7 +33,7 @@ export default {
           name: 'kanban_task_create',
           component: KanbanBoardPage,
           meta: {
-            permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
+            permissions: ROLES,
           },
         },
         {
@@ -41,7 +41,7 @@ export default {
           name: 'kanban_task_show',
           component: KanbanBoardPage,
           meta: {
-            permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
+            permissions: ROLES,
           },
         },
       ],
@@ -51,7 +51,7 @@ export default {
       name: 'kanban_board_settings',
       component: KanbanBoardSettingsPage,
       meta: {
-        permissions: [ROLES.ADMINISTRATOR],
+        permissions: ['administrator'],
       },
     },
   ],
