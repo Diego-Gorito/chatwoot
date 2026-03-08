@@ -476,6 +476,13 @@ const menuItems = computed(() => {
       activeOn: ['kanban_overview', 'kanban_board_show', 'kanban_board_settings'],
     },
     {
+      name: 'Kanban 2',
+      label: t('SIDEBAR.KANBAN2') || 'Kanban 2',
+      icon: 'i-lucide-trello',
+      to: accountScopedRoute('kanban2_overview'),
+      activeOn: ['kanban2_overview', 'kanban2_board_show'],
+    },
+    {
       name: 'Reports',
       label: t('SIDEBAR.REPORTS'),
       icon: 'i-lucide-chart-spline',

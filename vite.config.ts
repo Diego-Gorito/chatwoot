@@ -84,6 +84,7 @@ export default defineConfig({
       widget: path.resolve('./app/javascript/widget'),
       assets: path.resolve('./app/javascript/dashboard/assets'),
       kanban: path.resolve('./fazer_ai/app/javascript/kanban'),
+      kanban2: path.resolve('./fazer_ai/app/javascript/kanban2'),
     },
   },
   test: {

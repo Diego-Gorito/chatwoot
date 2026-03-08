@@ -11,6 +11,7 @@ import campaignsRoutes from './campaigns/campaigns.routes';
 import { routes as captainRoutes } from './captain/captain.routes';
 import dashboardAppsRoutes from './dashboardApps/dashboardApps.routes';
 import kanbanRoutes from 'kanban/routes';
+import kanban2Routes from 'kanban2/routes';
 import AppContainer from './Dashboard.vue';
 import Suspended from './suspended/Index.vue';
 import NoAccounts from './noAccounts/Index.vue';
@@ -33,6 +34,7 @@ export default {
         ...campaignsRoutes.routes,
         ...dashboardAppsRoutes.routes,
         kanbanRoutes,
+        kanban2Routes,
       ],
     },
     {
