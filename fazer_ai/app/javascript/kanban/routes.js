@@ -4,11 +4,13 @@ const KanbanOverviewPage = () => import('./pages/KanbanOverviewPage.vue');
 const KanbanBoardPage = () => import('./pages/KanbanBoardPage.vue');
 const KanbanBoardSettingsPage = () => import('./pages/KanbanBoardSettingsPage.vue');
 
+const KANBAN_ROLES = Object.values(ROLES);
+
 export default {
   path: 'kanban',
   name: 'kanban',
   meta: {
-    permissions: ROLES,
+    permissions: KANBAN_ROLES,
   },
   component: () => import('./Index.vue'),
   children: [
@@ -17,7 +19,7 @@ export default {
       name: 'kanban_list',
       component: KanbanOverviewPage,
       meta: {
-        permissions: ROLES,
+        permissions: KANBAN_ROLES,
       },
     },
     {
@@ -25,7 +27,7 @@ export default {
       name: 'kanban_board_show',
       component: KanbanBoardPage,
       meta: {
-        permissions: ROLES,
+        permissions: KANBAN_ROLES,
       },
       children: [
         {
@@ -33,7 +35,7 @@ export default {
           name: 'kanban_task_create',
           component: KanbanBoardPage,
           meta: {
-            permissions: ROLES,
+            permissions: KANBAN_ROLES,
           },
         },
         {
@@ -41,7 +43,7 @@ export default {
           name: 'kanban_task_show',
           component: KanbanBoardPage,
           meta: {
-            permissions: ROLES,
+            permissions: KANBAN_ROLES,
           },
         },
       ],
