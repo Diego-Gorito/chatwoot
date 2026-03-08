@@ -45,7 +45,8 @@
       "ALL_BOARDS": "All funnels"
     },
     "SIDEBAR": {
-      "OVERVIEW": "Overview"
+      "OVERVIEW": "Overview",
+      "KANBAN2": "Kanban 2"
     },
     "PAYWALL": {
       "TITLE": "Upgrade to use Kanban",
