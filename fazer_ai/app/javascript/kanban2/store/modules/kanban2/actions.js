@@ -1,4 +1,4 @@
-import * as types from '../../mutation-types';
+import * as types from '../mutation-types';
 import BoardsAPI from 'kanban2/api/boards';
 import PreferencesAPI from 'kanban2/api/preferences';
 import TasksAPI from 'kanban2/api/tasks';
