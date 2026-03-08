@@ -406,7 +406,6 @@ const handleDueDateChange = date => {
 <template>
   <div class="kanban-conversation-panel flex flex-col p-4">
     <!-- Kanban Content - Paywall removed -->
-    <template>
       <!-- No Task State -->
       <div v-if="!existingTask && !isCreating" class="multiselect-wrap--small">
         <ContactDetailsItem compact :title="$t('KANBAN.ADD_TO_BOARD')" />
@@ -735,7 +734,6 @@ const handleDueDateChange = date => {
           @update:due-date="handleDueDateChange"
         />
       </div>
-    </template>
   </div>
 </template>
 
