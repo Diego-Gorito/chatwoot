@@ -14,7 +14,7 @@ export default {
   children: [
     {
       path: 'overview',
-      name: 'kanban_overview',
+      name: 'kanban_list',
       component: KanbanOverviewPage,
       meta: {
         permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
@@ -27,6 +27,24 @@ export default {
       meta: {
         permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
       },
+      children: [
+        {
+          path: 'create',
+          name: 'kanban_task_create',
+          component: KanbanBoardPage,
+          meta: {
+            permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
+          },
+        },
+        {
+          path: 'task/:taskId',
+          name: 'kanban_task_show',
+          component: KanbanBoardPage,
+          meta: {
+            permissions: [ROLES.AGENT, ROLES.ADMINISTRATOR],
+          },
+        },
+      ],
     },
     {
       path: 'boards/:boardId/settings',
