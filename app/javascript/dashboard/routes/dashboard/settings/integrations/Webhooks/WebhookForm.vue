@@ -23,6 +23,13 @@ const SUPPORTED_WEBHOOK_EVENTS = [
   'conversation_typing_on',
   'conversation_typing_off',
   'provider_event_received',
+  // Kanban events
+  'kanban_task_created',
+  'kanban_task_updated',
+  'kanban_task_completed',
+  'kanban_task_cancelled',
+  'kanban_task_deleted',
+  'kanban_task_overdue',
 ];
 
 const localhostUrl = value => {
