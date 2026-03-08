@@ -237,6 +237,10 @@
 - name: captain_tasks
   display_name: Captain Tasks
   enabled: true
+- name: kanban
+  display_name: Kanban Boards
+  enabled: true
+  help_url: https://docs.chatwoot.com/kanban
 - name: conversation_required_attributes
   display_name: Required Conversation Attributes
   enabled: false
