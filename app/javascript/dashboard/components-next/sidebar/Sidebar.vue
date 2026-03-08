@@ -472,8 +472,8 @@ const menuItems = computed(() => {
       name: 'Kanban',
       label: t('SIDEBAR.KANBAN'),
       icon: 'i-lucide-kanban',
-      to: accountScopedRoute('kanban_list'),
-      activeOn: ['kanban_list', 'kanban_board_show', 'kanban_task_show', 'kanban_task_create', 'kanban_board_settings'],
+      to: accountScopedRoute('kanban_overview'),
+      activeOn: ['kanban_overview', 'kanban_board_show', 'kanban_board_settings'],
     },
     {
       name: 'Reports',

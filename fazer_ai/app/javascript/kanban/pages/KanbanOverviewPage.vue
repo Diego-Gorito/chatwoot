@@ -155,7 +155,6 @@ const getAssignedInboxes = inboxIds => {
     <!-- Kanban is now always enabled - paywall removed -->
 
     <!-- Kanban Content -->
-    <template>
       <div
         class="w-full flex justify-center px-6 sm:py-8 lg:px-16 pt-6 sm:pt-8 pb-4"
       >
@@ -477,7 +476,6 @@ const getAssignedInboxes = inboxIds => {
           @save="saveBoard"
         />
       </div>
-    </template>
   </div>
 </template>
 
