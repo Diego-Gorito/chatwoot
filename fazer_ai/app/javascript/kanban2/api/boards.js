@@ -3,7 +3,7 @@ import ApiClient from 'dashboard/api/ApiClient';
 
 class BoardsAPI extends ApiClient {
   constructor() {
-    super('kanban2/boards', { accountScoped: true, apiVersion: 'v1' });
+    super('kanban/boards', { accountScoped: true, apiVersion: 'v1' });
   }
 
   get(params) {

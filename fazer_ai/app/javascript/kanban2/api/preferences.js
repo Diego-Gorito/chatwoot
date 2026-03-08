@@ -3,7 +3,7 @@ import ApiClient from 'dashboard/api/ApiClient';
 
 class PreferencesAPI extends ApiClient {
   constructor() {
-    super('kanban2/account_user_preferences', {
+    super('kanban/account_user_preferences', {
       accountScoped: true,
       apiVersion: 'v1',
     });

@@ -3,7 +3,7 @@ import ApiClient from 'dashboard/api/ApiClient';
 
 class TasksAPI extends ApiClient {
   constructor() {
-    super('kanban2/tasks', { accountScoped: true, apiVersion: 'v1' });
+    super('kanban/tasks', { accountScoped: true, apiVersion: 'v1' });
   }
 
   get(params) {
