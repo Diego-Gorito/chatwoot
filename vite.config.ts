@@ -83,6 +83,7 @@ export default defineConfig({
       survey: path.resolve('./app/javascript/survey'),
       widget: path.resolve('./app/javascript/widget'),
       assets: path.resolve('./app/javascript/dashboard/assets'),
+      kanban: path.resolve('./fazer_ai/app/javascript/kanban'),
     },
   },
   test: {
