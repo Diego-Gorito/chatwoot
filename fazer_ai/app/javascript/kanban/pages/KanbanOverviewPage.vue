@@ -38,8 +38,10 @@ const isFazerAiSubscriptionActive = computed(() => {
 
 const isKanbanEnabled = computed(
   () =>
-    isCloudFeatureEnabled(FEATURE_FLAGS.KANBAN) &&
-    isFazerAiSubscriptionActive.value
+    // Always enabled - bypass all checks
+    true
+    // isCloudFeatureEnabled(FEATURE_FLAGS.KANBAN) &&
+    // isFazerAiSubscriptionActive.value
 );
 const isSuperAdmin = computed(() => currentUser.value?.type === 'SuperAdmin');
 const paywallI18nKey = computed(() =>
