@@ -10,7 +10,7 @@ import helpcenterRoutes from './helpcenter/helpcenter.routes';
 import campaignsRoutes from './campaigns/campaigns.routes';
 import { routes as captainRoutes } from './captain/captain.routes';
 import dashboardAppsRoutes from './dashboardApps/dashboardApps.routes';
-import kanbanRoutes from 'fazer_ai/app/javascript/kanban/routes';
+import kanbanRoutes from 'kanban/routes';
 import AppContainer from './Dashboard.vue';
 import Suspended from './suspended/Index.vue';
 import NoAccounts from './noAccounts/Index.vue';
@@ -32,7 +32,7 @@ export default {
         ...helpcenterRoutes.routes,
         ...campaignsRoutes.routes,
         ...dashboardAppsRoutes.routes,
-        ...kanbanRoutes,
+        kanbanRoutes,
       ],
     },
     {
