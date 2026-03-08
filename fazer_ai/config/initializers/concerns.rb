@@ -10,4 +10,5 @@ Rails.application.config.to_prepare do
   Conversations::EventDataPresenter.prepend(FazerAi::Conversations::EventDataPresenter)
   AsyncDispatcher.prepend(FazerAi::AsyncDispatcher)
   AutomationRule.prepend(FazerAi::AutomationRule)
+  Webhook.include(FazerAi::Webhook)
 end
