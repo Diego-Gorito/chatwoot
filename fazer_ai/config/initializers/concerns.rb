@@ -3,6 +3,7 @@
 # Ensure core models pick up fazer_ai associations without impacting OSS license boundaries.
 Rails.application.config.to_prepare do
   Account.include(FazerAi::Concerns::Account)
+  AccountUser.include(FazerAi::Concerns::AccountUser)
   Inbox.include(FazerAi::Concerns::Inbox)
   User.include(FazerAi::Concerns::User)
   Conversation.include(FazerAi::Concerns::Conversation)
