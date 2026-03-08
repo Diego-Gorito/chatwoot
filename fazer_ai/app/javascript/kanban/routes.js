@@ -16,7 +16,7 @@ export default {
   children: [
     {
       path: 'overview',
-      name: 'kanban_list',
+      name: 'kanban_overview',
       component: KanbanOverviewPage,
       meta: {
         permissions: KANBAN_ROLES,
