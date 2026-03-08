@@ -30,8 +30,10 @@ const fazerAiSubscription = computed(
   () => store.getters['globalConfig/getFazerAiSubscription']
 );
 const isFazerAiSubscriptionActive = computed(() => {
-  const status = fazerAiSubscription.value?.status;
-  return ['active', 'past_due', 'trialing'].includes(status);
+  // Always return true to bypass paywall
+  return true;
+  // const status = fazerAiSubscription.value?.status;
+  // return ['active', 'past_due', 'trialing'].includes(status);
 });
 
 const isKanbanEnabled = computed(
