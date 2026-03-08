@@ -10,8 +10,5 @@ Rails.application.config.to_prepare do
   Conversations::EventDataPresenter.prepend(FazerAi::Conversations::EventDataPresenter)
   AsyncDispatcher.prepend(FazerAi::AsyncDispatcher)
   AutomationRule.prepend(FazerAi::AutomationRule)
-
-  # Explicitly require and include webhook concern
-  require_dependency Rails.root.join('fazer_ai/app/models/concerns/fazer_ai/webhook')
   Webhook.include(FazerAi::Webhook)
 end
