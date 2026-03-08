@@ -114,3 +114,16 @@ export const hasOneDayPassed = timestamp => {
   if (!timestamp) return true; // Defensive check
   return getDayDifferenceFromNow(new Date(), timestamp) >= 1;
 };
+
+/**
+ * Converts a Date object to a shortened timestamp format.
+ * This is a wrapper around shortTimestamp that takes a Date object instead of a string.
+ * @param {Date} date - Date object to convert
+ * @param {boolean} [withAgo=false] - Whether to append 'ago' to the result.
+ * @returns {string} Shortened time description.
+ */
+export const shortTimestampFromDate = (date, withAgo = false) => {
+  if (!date) return '';
+  const timeString = dynamicTime(date);
+  return shortTimestamp(timeString, withAgo);
+};
