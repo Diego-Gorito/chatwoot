@@ -30,6 +30,7 @@ class Account < ApplicationRecord
   include CacheKeys
   include CaptainFeaturable
   include AccountEmailRateLimitable
+  include FazerAi::Concerns::Account
 
   SETTINGS_PARAMS_SCHEMA = {
     'type': 'object',
