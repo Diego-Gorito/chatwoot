@@ -9,8 +9,8 @@ class Api::V1::Accounts::Kanban::BoardsController < Api::V1::Accounts::Kanban::B
     authorize(FazerAi::Kanban::Board)
     @boards = policy_scope(FazerAi::Kanban::Board)
               .includes(
-                :inboxes,
-                :steps,
+                inboxes: :channel,
+                steps: :tasks,
                 assigned_agents: [:account_users, { avatar_attachment: :blob }]
               )
 
@@ -53,6 +53,14 @@ class Api::V1::Accounts::Kanban::BoardsController < Api::V1::Accounts::Kanban::B
       sync_inboxes(@board)
     end
 
+    # Reload with associations to ensure all nested resources and callbacks are fully persisted
+    @board = FazerAi::Kanban::Board
+             .includes(
+               inboxes: :channel,
+               steps: :tasks,
+               assigned_agents: [:account_users, { avatar_attachment: :blob }]
+             )
+             .find(@board.id)
     render :show, status: :created
   rescue ActiveRecord::RecordInvalid
     render_unprocessable_entity(@board)
@@ -133,8 +141,8 @@ class Api::V1::Accounts::Kanban::BoardsController < Api::V1::Accounts::Kanban::B
   def set_board
     @board = policy_scope(FazerAi::Kanban::Board)
              .includes(
-               :inboxes,
-               :steps,
+               inboxes: :channel,
+               steps: :tasks,
                assigned_agents: [:account_users, { avatar_attachment: :blob }]
              )
              .find(params[:id])
