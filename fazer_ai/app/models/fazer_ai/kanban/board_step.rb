@@ -58,10 +58,14 @@ class FazerAi::Kanban::BoardStep < ApplicationRecord
   end
 
   def last_step?
+    return false if board.steps_order.blank?
+
     board.steps_order.last == id
   end
 
   def first_step?
+    return false if board.steps_order.blank?
+
     board.steps_order.first == id
   end
 

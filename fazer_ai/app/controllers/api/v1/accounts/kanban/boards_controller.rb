@@ -51,6 +51,8 @@ class Api::V1::Accounts::Kanban::BoardsController < Api::V1::Accounts::Kanban::B
       @board.save!
       apply_cancelled_steps
       sync_inboxes(@board)
+      # Ensure steps_order is populated for all steps created via nested attributes
+      ensure_steps_order_synced(@board)
     end
 
     # Reload with associations to ensure all nested resources and callbacks are fully persisted
@@ -196,6 +198,19 @@ class Api::V1::Accounts::Kanban::BoardsController < Api::V1::Accounts::Kanban::B
 
   def inbox_ids_param
     Array(params.dig(:board, :inbox_ids)).map(&:to_i).uniq
+  end
+
+  def ensure_steps_order_synced(board)
+    # Reload to get steps created by nested attributes
+    board.reload
+    # Get all step IDs that should be in steps_order
+    all_step_ids = board.steps.order(created_at: :asc).pluck(:id)
+    # If steps_order is missing any step IDs, sync it
+    missing_ids = all_step_ids - board.steps_order
+    return if missing_ids.empty?
+
+    # Update steps_order to include all steps in creation order
+    board.update_column(:steps_order, all_step_ids) # rubocop:disable Rails/SkipsModelValidations
   end
 
   def resolve_sorting
