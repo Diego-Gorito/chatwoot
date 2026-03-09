@@ -97,6 +97,9 @@
       "ig_reel": {
         "CONTENT": "Instagram Reel"
       },
+      "ig_story": {
+        "CONTENT": "Replied to your story"
+      },
       "fallback": {
         "CONTENT": "has shared a url"
       },
