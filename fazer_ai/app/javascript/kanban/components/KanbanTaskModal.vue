@@ -372,7 +372,11 @@ watch(
 // Normalizes date for API submission
 const normalizeDate = date => {
   if (!date) return null;
-  return new Date(date).toISOString();
+  // Ensure it's a valid date object
+  const dateObj = date instanceof Date ? date : new Date(date);
+  // Check if date is valid
+  if (Number.isNaN(dateObj.getTime())) return null;
+  return dateObj.toISOString();
 };
 
 const onSave = () => {
