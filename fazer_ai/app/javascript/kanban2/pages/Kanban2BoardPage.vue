@@ -126,7 +126,7 @@
           <!-- Divider -->
           <div class="w-px h-6 bg-n-weak mx-1" />
 
-          <!-- Agent Filter (using native select for now, can be upgraded to SelectMenu) -->
+          <!-- Agent Filter -->
           <select
             v-model="selectedAgentId"
             class="px-3 py-2 bg-white dark:bg-n-slate-3 border border-n-weak hover:border-n-strong rounded-xl text-sm text-n-slate-12 shadow-sm transition-all appearance-none cursor-pointer pr-8"
@@ -231,16 +231,32 @@
 
       <!-- Board Area -->
       <div class="flex-1 overflow-x-auto overflow-y-hidden pb-4">
-        <Kanban2Board v-if="activeBoard" />
+        <Kanban2Board
+          v-if="activeBoard"
+          :steps="filteredSteps"
+          :show-completed="showCompleted"
+          :show-cancelled="showCancelled"
+          @add-task="openCreateModal"
+        />
       </div>
     </div>
 
-    <!-- Board Modal (placeholder for now) -->
-    <!-- <Kanban2BoardModal
+    <!-- Board Modal -->
+    <Kanban2BoardModal
       v-if="showBoardModal"
       @close="showBoardModal = false"
-      @save="createBoard"
-    /> -->
+      @save="handleBoardSave"
+    />
+
+    <!-- Task Modal -->
+    <Kanban2TaskModal
+      v-if="showTaskModal"
+      :task="selectedTask"
+      :board-id="selectedBoardId"
+      :step-id="selectedStepId"
+      @close="closeTaskModal"
+      @save="handleTaskSave"
+    />
   </div>
 </template>
 
@@ -251,8 +267,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { vOnClickOutside } from '@vueuse/components';
 import { useAdmin } from 'dashboard/composables/useAdmin';
+import { useAlert } from 'dashboard/composables';
 import kanban2Module from 'kanban2/store/modules/kanban2';
 import Kanban2Board from 'kanban2/components/Kanban2Board.vue';
+import Kanban2BoardModal from 'kanban2/components/Kanban2BoardModal.vue';
+import Kanban2TaskModal from 'kanban2/components/Kanban2TaskModal.vue';
+import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 
 const store = useStore();
 const route = useRoute();
@@ -273,11 +293,15 @@ const selectedBoardId = computed(() => store.state.kanban2.selectedBoardId);
 const steps = computed(() => store.getters['kanban2/orderedSteps'] || []);
 const agents = computed(() => store.state.agents?.records || []);
 const inboxes = computed(() => store.state.inboxes?.records || []);
+const preferences = computed(() => store.state.kanban2.preferences);
 
 // UI State
 const showBoardSwitcher = ref(false);
 const showSortMenu = ref(false);
 const showBoardModal = ref(false);
+const showTaskModal = ref(false);
+const selectedTask = ref(null);
+const selectedStepId = ref(null);
 
 // Filters
 const showCompleted = ref(false);
@@ -292,9 +316,31 @@ const activeBoardName = computed(
   () => activeBoard.value?.name || 'Select Board'
 );
 
+const filteredSteps = computed(() => {
+  return steps.value.filter(step => {
+    if (step.inferred_task_status === 'completed' && !showCompleted.value) {
+      return false;
+    }
+    if (step.inferred_task_status === 'cancelled' && !showCancelled.value) {
+      return false;
+    }
+    return true;
+  });
+});
+
 const filteredTotalTasks = computed(() => {
-  // TODO: Calculate from actual tasks
-  return activeBoard.value?.total_tasks_count || 0;
+  // Calculate total from all steps
+  let total = 0;
+  steps.value.forEach(step => {
+    if (
+      (step.inferred_task_status === 'completed' && !showCompleted.value) ||
+      (step.inferred_task_status === 'cancelled' && !showCancelled.value)
+    ) {
+      return;
+    }
+    total += step.tasks_count || 0;
+  });
+  return total;
 });
 
 const sortOptions = [
@@ -324,16 +370,95 @@ const openBoardModal = () => {
   showBoardModal.value = true;
 };
 
-const openCreateModal = () => {
-  // TODO: Open task creation modal
-  console.log('Open create task modal');
+const handleBoardSave = async boardData => {
+  try {
+    const newBoard = await store.dispatch('kanban2/createBoard', boardData);
+    showBoardModal.value = false;
+    useAlert(t('KANBAN.BOARD_MODAL.CREATE_SUCCESS'));
+
+    // Navigate to the new board
+    if (newBoard?.id) {
+      navigateToBoard(newBoard.id);
+    }
+  } catch (error) {
+    useAlert(
+      parseAPIErrorResponse(error) || t('KANBAN.BOARD_MODAL.CREATE_ERROR')
+    );
+  }
 };
 
-const onSortChange = sortValue => {
+const openCreateModal = (stepId = null) => {
+  selectedTask.value = null;
+  selectedStepId.value = stepId || steps.value[0]?.id;
+  showTaskModal.value = true;
+};
+
+const closeTaskModal = () => {
+  showTaskModal.value = false;
+  selectedTask.value = null;
+  selectedStepId.value = null;
+};
+
+const handleTaskSave = async taskData => {
+  try {
+    if (selectedTask.value?.id) {
+      // Update existing task
+      await store.dispatch('kanban2/updateTask', {
+        id: selectedTask.value.id,
+        task: taskData,
+      });
+      useAlert(t('KANBAN.TASK_MODAL.UPDATE_SUCCESS'));
+    } else {
+      // Create new task
+      await store.dispatch('kanban2/createTask', taskData);
+      useAlert(t('KANBAN.TASK_MODAL.CREATE_SUCCESS'));
+    }
+    closeTaskModal();
+  } catch (error) {
+    useAlert(
+      parseAPIErrorResponse(error) || t('KANBAN.TASK_MODAL.SAVE_ERROR')
+    );
+  }
+};
+
+const onSortChange = async sortValue => {
   activeSort.value = sortValue;
   showSortMenu.value = false;
-  // TODO: Trigger sort in store
-  console.log('Sort changed to:', sortValue);
+
+  if (!selectedBoardId.value) return;
+
+  // Update sorting in store
+  await store.dispatch('kanban2/updateTaskSorting', {
+    boardId: selectedBoardId.value,
+    sort: sortValue,
+    order: 'asc',
+  });
+
+  // Reset and re-fetch tasks with new sorting
+  await store.dispatch('kanban2/resetStepTasks');
+  await fetchVisibleStepTasks();
+};
+
+const fetchVisibleStepTasks = async () => {
+  const visibleSteps = filteredSteps.value;
+
+  await Promise.all(
+    visibleSteps.map(step =>
+      store.dispatch('kanban2/fetchTasksForStep', {
+        stepId: step.id,
+        page: 1,
+        perPage: 10,
+      })
+    )
+  );
+};
+
+const fetchStepsWithFilters = async () => {
+  await store.dispatch('kanban2/fetchSteps', {
+    boardId: selectedBoardId.value,
+    agentId: selectedAgentId.value,
+    inboxId: selectedInboxId.value,
+  });
 };
 
 // Lifecycle
@@ -353,9 +478,29 @@ onMounted(async () => {
     const boardToSelect =
       boards.value.find(b => String(b.id) === String(boardId)) ||
       boards.value[0];
+
+    // Load saved filters from preferences
+    const boardFilters = preferences.value.board_filters || {};
+    const savedFilters = boardFilters[boardToSelect.id] || {};
+    selectedAgentId.value = savedFilters.agent_id || 'all';
+    selectedInboxId.value = savedFilters.inbox_id || 'all';
+    showCompleted.value = savedFilters.show_completed || false;
+    showCancelled.value = savedFilters.show_cancelled || false;
+
+    // Load saved sort
+    const taskSorting = preferences.value.task_sorting || {};
+    const savedSort = taskSorting[boardToSelect.id] || {};
+    activeSort.value = savedSort.sort || 'position';
+    activeOrdering.value = savedSort.order || 'asc';
+
     await store.dispatch('kanban2/setActiveBoard', {
       boardId: boardToSelect.id,
+      agentId: selectedAgentId.value,
+      inboxId: selectedInboxId.value,
     });
+
+    // Fetch tasks for visible steps
+    await fetchVisibleStepTasks();
   }
 });
 
@@ -366,24 +511,43 @@ watch(
     if (newBoardId && newBoardId !== String(selectedBoardId.value)) {
       await store.dispatch('kanban2/setActiveBoard', {
         boardId: Number(newBoardId),
+        agentId: selectedAgentId.value,
+        inboxId: selectedInboxId.value,
       });
+      await fetchVisibleStepTasks();
     }
   }
 );
 
+// Watch for visibility changes (completed/cancelled toggles)
+watch([showCompleted, showCancelled], async () => {
+  if (!selectedBoardId.value) return;
+
+  // Fetch tasks for newly visible steps
+  await fetchVisibleStepTasks();
+});
+
 // Watch filters and apply them
 watch(
-  [selectedAgentId, selectedInboxId, showCompleted, showCancelled],
-  async () => {
+  [selectedAgentId, selectedInboxId],
+  async ([newAgentId, newInboxId], [oldAgentId, oldInboxId]) => {
     if (!selectedBoardId.value) return;
 
-    // TODO: Implement filtering in store
-    console.log('Filters changed:', {
-      agent: selectedAgentId.value,
-      inbox: selectedInboxId.value,
-      completed: showCompleted.value,
-      cancelled: showCancelled.value,
+    // Update filters in store
+    await store.dispatch('kanban2/updateBoardFilters', {
+      boardId: selectedBoardId.value,
+      agentId: newAgentId,
+      inboxId: newInboxId,
+      showCompleted: showCompleted.value,
+      showCancelled: showCancelled.value,
     });
+
+    // Re-fetch if agent/inbox changed
+    if (newAgentId !== oldAgentId || newInboxId !== oldInboxId) {
+      await store.dispatch('kanban2/resetStepTasks');
+      await fetchStepsWithFilters();
+      await fetchVisibleStepTasks();
+    }
   }
 );
 </script>
