@@ -34,13 +34,11 @@ module ChatwootApp
   end
 
   def self.extensions
-    if custom?
-      %w[enterprise custom]
-    elsif enterprise?
-      %w[enterprise]
-    else
-      %w[]
-    end
+    base = []
+    base << 'fazer_ai' if root.join('fazer_ai').exist?
+    base << 'enterprise' if enterprise?
+    base << 'custom' if custom?
+    base
   end
 
   def self.advanced_search_allowed?
