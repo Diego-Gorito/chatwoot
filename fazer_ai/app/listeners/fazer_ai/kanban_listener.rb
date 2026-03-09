@@ -8,6 +8,19 @@ class FazerAi::KanbanListener < BaseListener
     auto_create_task_for_conversation(conversation)
   end
 
+  def message_created(event)
+    message = event.data[:message]
+    return unless message
+    return unless message.incoming? # Only trigger on incoming messages
+    return unless message.conversation
+
+    conversation = message.conversation
+    return unless conversation&.account&.kanban_feature_enabled?
+    return if conversation.kanban_task_id.present? # Skip if task already exists
+
+    auto_create_task_for_conversation(conversation)
+  end
+
   def conversation_resolved(event)
     conversation = event.data[:conversation]
     return unless conversation&.account&.kanban_feature_enabled?
