@@ -21,6 +21,20 @@ By default, it renders:
     <meta name= "turbolinks-cache-control" content= "no-cache">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="<%= request.original_url %>" />
+    <meta property="og:title" content="<%= @portal&.page_title || @portal&.name || 'Help Center' %>" />
+    <meta property="og:description" content="<%= @portal&.meta_description || "Browse our help articles and find answers to your questions" %>" />
+    <meta property="og:image" content="<%= @portal&.logo&.url || @global_config&.dig('LOGO_THUMBNAIL') || asset_url('brand-assets/logo.svg') %>" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="<%= request.original_url %>" />
+    <meta property="twitter:title" content="<%= @portal&.page_title || @portal&.name || 'Help Center' %>" />
+    <meta property="twitter:description" content="<%= @portal&.meta_description || "Browse our help articles and find answers to your questions" %>" />
+    <meta property="twitter:image" content="<%= @portal&.logo&.url || @global_config&.dig('LOGO_THUMBNAIL') || asset_url('brand-assets/logo.svg') %>" />
+
     <%= vite_client_tag %>
     <%= vite_javascript_tag 'portal' %>
     <style>
