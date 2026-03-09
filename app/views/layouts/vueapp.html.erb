@@ -7,19 +7,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=0"/>
     <meta name="generator" content="fazer.ai"/>
 
+    <%
+      # Build absolute URL for og:image (Facebook doesn't support relative URLs or SVG)
+      base_url = ENV.fetch('FRONTEND_URL', request.base_url)
+      logo_path = @global_config['LOGO_THUMBNAIL']
+
+      # Convert SVG to PNG if needed, and make absolute URL
+      if logo_path&.end_with?('.svg')
+        og_image_url = "#{base_url}/brand-assets/logo.png"
+      elsif logo_path&.start_with?('http')
+        og_image_url = logo_path
+      else
+        og_image_url = "#{base_url}#{logo_path}"
+      end
+    %>
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="<%= ENV.fetch('FRONTEND_URL', request.base_url) %>" />
+    <meta property="og:url" content="<%= base_url %>" />
     <meta property="og:title" content="<%= @global_config['INSTALLATION_NAME'] %>" />
     <meta property="og:description" content="<%= @global_config['INSTALLATION_NAME'] %> is a customer support solution that helps companies engage customers over multiple channels." />
-    <meta property="og:image" content="<%= @global_config['LOGO_THUMBNAIL'] %>" />
+    <meta property="og:image" content="<%= og_image_url %>" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="<%= ENV.fetch('FRONTEND_URL', request.base_url) %>" />
+    <meta property="twitter:url" content="<%= base_url %>" />
     <meta property="twitter:title" content="<%= @global_config['INSTALLATION_NAME'] %>" />
     <meta property="twitter:description" content="<%= @global_config['INSTALLATION_NAME'] %> is a customer support solution that helps companies engage customers over multiple channels." />
-    <meta property="twitter:image" content="<%= @global_config['LOGO_THUMBNAIL'] %>" />
+    <meta property="twitter:image" content="<%= og_image_url %>" />
 
     <% if @global_config['DISPLAY_MANIFEST'] %>
       <meta name="msapplication-TileColor" content="#1f93ff">

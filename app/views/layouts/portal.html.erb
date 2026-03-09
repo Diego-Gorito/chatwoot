@@ -21,19 +21,43 @@ By default, it renders:
     <meta name= "turbolinks-cache-control" content= "no-cache">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <%
+      # Build absolute URL for og:image (Facebook doesn't support relative URLs or SVG)
+      base_url = "#{request.protocol}#{request.host_with_port}"
+      portal_logo = @portal&.logo&.url
+      fallback_logo = @global_config&.dig('LOGO_THUMBNAIL')
+
+      # Determine og:image URL
+      if portal_logo&.start_with?('http')
+        og_image_url = portal_logo
+      elsif portal_logo
+        og_image_url = "#{base_url}#{portal_logo}"
+      elsif fallback_logo&.end_with?('.svg')
+        og_image_url = "#{base_url}/brand-assets/logo.png"
+      elsif fallback_logo&.start_with?('http')
+        og_image_url = fallback_logo
+      elsif fallback_logo
+        og_image_url = "#{base_url}#{fallback_logo}"
+      else
+        og_image_url = "#{base_url}/brand-assets/logo.png"
+      end
+    %>
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="<%= request.original_url %>" />
     <meta property="og:title" content="<%= @portal&.page_title || @portal&.name || 'Help Center' %>" />
     <meta property="og:description" content="<%= @portal&.meta_description || "Browse our help articles and find answers to your questions" %>" />
-    <meta property="og:image" content="<%= @portal&.logo&.url || @global_config&.dig('LOGO_THUMBNAIL') || asset_url('brand-assets/logo.svg') %>" />
+    <meta property="og:image" content="<%= og_image_url %>" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="<%= request.original_url %>" />
     <meta property="twitter:title" content="<%= @portal&.page_title || @portal&.name || 'Help Center' %>" />
     <meta property="twitter:description" content="<%= @portal&.meta_description || "Browse our help articles and find answers to your questions" %>" />
-    <meta property="twitter:image" content="<%= @portal&.logo&.url || @global_config&.dig('LOGO_THUMBNAIL') || asset_url('brand-assets/logo.svg') %>" />
+    <meta property="twitter:image" content="<%= og_image_url %>" />
 
     <%= vite_client_tag %>
     <%= vite_javascript_tag 'portal' %>
