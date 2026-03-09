@@ -1,0 +1,230 @@
+name: Sync Upstream Chatwoot
+
+on:
+  # Run daily at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Chatwoot version to merge (e.g., v3.2.0 or develop)'
+        required: false
+        default: 'develop'
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      has_updates: ${{ steps.check.outputs.has_updates }}
+      latest_version: ${{ steps.check.outputs.latest_version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/chatwoot/chatwoot.git || true
+          git fetch upstream --tags
+
+      - name: Check for new releases
+        id: check
+        run: |
+          # Get latest upstream tag
+          LATEST_UPSTREAM=$(git describe --tags --abbrev=0 upstream/develop || echo "none")
+
+          # Get our current version (from last merge commit)
+          CURRENT_VERSION=$(git log --grep="Merge.*upstream" --oneline -1 | grep -oP 'v\d+\.\d+\.\d+' || echo "v0.0.0")
+
+          echo "latest_version=$LATEST_UPSTREAM" >> $GITHUB_OUTPUT
+
+          if [ "$LATEST_UPSTREAM" != "$CURRENT_VERSION" ] && [ "$LATEST_UPSTREAM" != "none" ]; then
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+            echo "New version available: $LATEST_UPSTREAM (current: $CURRENT_VERSION)"
+          else
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "Already up to date with $CURRENT_VERSION"
+          fi
+
+  merge-and-patch:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_updates == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "Kanban Patch Bot"
+          git config user.email "noreply@github.com"
+
+      - name: Set target version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ needs.check-upstream.outputs.latest_version }}"
+          fi
+          echo "target=$VERSION" >> $GITHUB_OUTPUT
+          echo "Targeting version: $VERSION"
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/chatwoot/chatwoot.git || true
+          git fetch upstream --tags
+
+      - name: Create merge branch
+        run: |
+          BRANCH_NAME="merge/upstream-${{ steps.version.outputs.target }}-$(date +%Y%m%d-%H%M%S)"
+          echo "branch=$BRANCH_NAME" >> $GITHUB_ENV
+          git checkout -b $BRANCH_NAME
+
+      - name: Merge upstream
+        id: merge
+        continue-on-error: true
+        run: |
+          git merge upstream/${{ steps.version.outputs.target }} --no-edit
+
+      - name: Check for conflicts
+        if: steps.merge.outcome == 'failure'
+        run: |
+          echo "❌ Merge conflicts detected!"
+          echo "Conflicts in the following files:"
+          git diff --name-only --diff-filter=U
+          echo "Please resolve conflicts manually"
+          exit 1
+
+      - name: Apply Kanban patches
+        id: patches
+        continue-on-error: true
+        run: |
+          chmod +x .kanban-patches/scripts/apply-patches.sh
+          .kanban-patches/scripts/apply-patches.sh
+
+      - name: Check patch results
+        if: steps.patches.outcome == 'failure'
+        run: |
+          echo "⚠️ Some patches failed to apply"
+          echo "This may require manual intervention or patch updates"
+          # Continue anyway - create PR for manual review
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version-file: .ruby-version
+          bundler-cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          bundle install
+          npm install -g pnpm
+          pnpm install
+
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        run: |
+          # Run Kanban-specific tests
+          bundle exec rspec fazer_ai/spec/ --format documentation
+
+      - name: Commit changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "chore: merge upstream Chatwoot ${{ steps.version.outputs.target }} and apply Kanban patches
+
+Automated merge from upstream Chatwoot repository.
+
+Upstream version: ${{ steps.version.outputs.target }}
+Patches applied: $(ls -1 .kanban-patches/patches/*.patch | wc -l)
+Tests: ${{ steps.tests.outcome }}
+
+This PR was automatically generated by the sync-upstream-chatwoot workflow."
+          fi
+
+      - name: Push branch
+        run: |
+          git push origin ${{ env.branch }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.branch }}
+          title: "🔄 Merge upstream Chatwoot ${{ steps.version.outputs.target }}"
+          body: |
+            ## 🔄 Upstream Merge
+
+            This PR merges the latest changes from [Chatwoot](https://github.com/chatwoot/chatwoot) upstream repository.
+
+            ### 📋 Details
+
+            - **Upstream version:** `${{ steps.version.outputs.target }}`
+            - **Patches applied:** `$(ls -1 .kanban-patches/patches/*.patch | wc -l)` patches
+            - **Tests status:** ${{ steps.tests.outcome == 'success' && '✅ Passed' || '⚠️ Failed or Skipped' }}
+            - **Merge conflicts:** ${{ steps.merge.outcome == 'success' && '✅ None' || '❌ Present' }}
+            - **Patch conflicts:** ${{ steps.patches.outcome == 'success' && '✅ None' || '⚠️ Some failed' }}
+
+            ### 🧪 Testing
+
+            Automated tests have been run for the Kanban integration.
+
+            Please review the changes and run additional manual tests:
+
+            - [ ] Create a Kanban board
+            - [ ] Add and edit tasks
+            - [ ] Test drag & drop
+            - [ ] Verify board deletion
+            - [ ] Check webhook integrations
+
+            ### 📝 Review Checklist
+
+            - [ ] No conflicts in core Kanban files
+            - [ ] All patches applied successfully
+            - [ ] Tests passing
+            - [ ] No breaking changes in dependencies
+            - [ ] Database migrations (if any) reviewed
+
+            ### 🚀 Deployment
+
+            After approval and merge:
+            1. Run any new migrations: `bundle exec rails db:migrate`
+            2. Restart Rails server
+            3. Clear cache if needed
+            4. Monitor logs for errors
+
+            ---
+
+            🤖 This PR was automatically created by the sync-upstream-chatwoot workflow.
+          labels: |
+            upstream-merge
+            kanban
+            automated
+          draft: ${{ steps.tests.outcome != 'success' || steps.patches.outcome != 'success' }}
+
+      - name: Summary
+        run: |
+          echo "## 📊 Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Target Version:** ${{ steps.version.outputs.target }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Merge Status:** ${{ steps.merge.outcome == 'success' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Patches Status:** ${{ steps.patches.outcome == 'success' && '✅ Success' || '⚠️ Some Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tests Status:** ${{ steps.tests.outcome == 'success' && '✅ Passed' || '⚠️ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "A pull request has been created for review." >> $GITHUB_STEP_SUMMARY

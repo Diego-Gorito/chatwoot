@@ -1,0 +1,33 @@
+From a108c668159a5c026eef5514bdd8ded4ff613c7c Mon Sep 17 00:00:00 2001
+From: Kanban Patch Bot <noreply@chatwoot.com>
+Date: Sun, 8 Mar 2026 23:47:05 -0300
+Subject: [PATCH] fix(kanban): add missing Kanban event type constants
+
+Add missing KANBAN_* event type constants to Events::Types module.
+
+Fixes "Internal Server Error" when updating or deleting Kanban boards
+by adding the missing event type constants that the Kanban models expect.
+---
+ lib/events/types.rb | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/lib/events/types.rb b/lib/events/types.rb
+index cb76babbe..ea58b1cdb 100644
+--- a/lib/events/types.rb
++++ b/lib/events/types.rb
+@@ -67,4 +67,13 @@ module Events::Types
+
+   # copilot events
+   COPILOT_MESSAGE_CREATED = 'copilot.message.created'
++
++  # kanban events
++  KANBAN_BOARD_CREATED = 'kanban.board.created'
++  KANBAN_BOARD_UPDATED = 'kanban.board.updated'
++  KANBAN_BOARD_DELETED = 'kanban.board.deleted'
++  KANBAN_TASK_CREATED = 'kanban.task.created'
++  KANBAN_TASK_UPDATED = 'kanban.task.updated'
++  KANBAN_TASK_DELETED = 'kanban.task.deleted'
++  KANBAN_TASK_MOVED = 'kanban.task.moved'
+ end
+--
+2.43.0
