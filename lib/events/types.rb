@@ -72,6 +72,8 @@ module Events::Types
   KANBAN_BOARD_CREATED = 'kanban.board.created'
   KANBAN_BOARD_UPDATED = 'kanban.board.updated'
   KANBAN_BOARD_DELETED = 'kanban.board.deleted'
+  KANBAN_STEP_CREATED = 'kanban.step.created'
+  KANBAN_STEP_UPDATED = 'kanban.step.updated'
   KANBAN_TASK_CREATED = 'kanban.task.created'
   KANBAN_TASK_UPDATED = 'kanban.task.updated'
   KANBAN_TASK_DELETED = 'kanban.task.deleted'
