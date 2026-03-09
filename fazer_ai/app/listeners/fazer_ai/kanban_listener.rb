@@ -3,14 +3,8 @@
 class FazerAi::KanbanListener < BaseListener
   def conversation_created(event)
     conversation = event.data[:conversation]
-    Rails.logger.info "[Kanban] conversation_created event received for conversation ##{conversation&.display_id}"
+    return unless conversation&.account&.kanban_feature_enabled?
 
-    unless conversation&.account&.kanban_feature_enabled?
-      Rails.logger.info "[Kanban] Kanban feature not enabled for account ##{conversation&.account&.id}"
-      return
-    end
-
-    Rails.logger.info "[Kanban] Creating tasks for conversation ##{conversation.display_id}"
     auto_create_task_for_conversation(conversation)
   end
 
@@ -127,16 +121,10 @@ class FazerAi::KanbanListener < BaseListener
     inbox = conversation.inbox
     account = conversation.account
 
-    boards = boards_for_inbox(inbox).to_a
-    Rails.logger.info "[Kanban] Found #{boards.size} boards for inbox ##{inbox.id} (#{inbox.name})"
-
-    boards.each do |board|
-      Rails.logger.info "[Kanban] Checking board ##{board.id} (#{board.name}): auto_create=#{board.auto_create_task_for_conversation?}, has_first_step=#{board.first_step.present?}"
-
+    boards_for_inbox(inbox).each do |board|
       next unless board.auto_create_task_for_conversation?
       next if board.first_step.blank?
 
-      Rails.logger.info "[Kanban] Creating task for conversation ##{conversation.display_id} on board ##{board.id}"
       create_task_for_conversation(board, conversation, account)
     end
   end
@@ -150,8 +138,6 @@ class FazerAi::KanbanListener < BaseListener
   def create_task_for_conversation(board, conversation, account)
     title = generate_task_title(conversation, account)
 
-    Rails.logger.info "[Kanban] Creating task with title: '#{title}', conversation_ids: [#{conversation.display_id}]"
-
     task = FazerAi::Kanban::Task.create!(
       account: account,
       board: board,
@@ -161,13 +147,7 @@ class FazerAi::KanbanListener < BaseListener
       conversation_ids: [conversation.display_id]
     )
 
-    Rails.logger.info "[Kanban] Task ##{task.id} created successfully, conversations: #{task.conversations.pluck(:display_id).inspect}"
-
     assign_conversation_agent_to_task(task, conversation, board)
-  rescue StandardError => e
-    Rails.logger.error "[Kanban] Error creating task for conversation ##{conversation.display_id}: #{e.class.name}: #{e.message}"
-    Rails.logger.error e.backtrace.first(10).join("\n")
-    raise
   end
 
   def assign_conversation_agent_to_task(task, conversation, board)
