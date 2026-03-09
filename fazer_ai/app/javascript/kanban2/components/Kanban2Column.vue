@@ -29,11 +29,17 @@
         @change="onDragChange"
       >
         <template #item="{ element }">
-          <Kanban2TaskCard :task="element" />
+          <Kanban2TaskCard
+            :task="element"
+            @click="handleEditTask(element)"
+          />
         </template>
-        
+
         <template #footer>
-           <button class="mt-2 w-full flex items-center gap-2 p-2 rounded-xl text-n-slate-10 hover:text-woot-500 hover:bg-woot-50 dark:hover:bg-woot-900/20 transition-colors text-sm font-medium group text-left">
+           <button
+             class="mt-2 w-full flex items-center gap-2 p-2 rounded-xl text-n-slate-10 hover:text-woot-500 hover:bg-woot-50 dark:hover:bg-woot-900/20 transition-colors text-sm font-medium group text-left"
+             @click="handleAddTask"
+           >
              <span class="i-lucide-plus size-4 transition-transform group-hover:scale-110"></span>
              Add Task
            </button>
@@ -60,6 +66,8 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(['add-task', 'edit-task']);
+
 const store = useStore();
 
 // Local copy for smooth dragging before backend sync
@@ -69,18 +77,32 @@ watch(() => props.tasks, (newTasks) => {
   internalTasks.value = [...newTasks];
 }, { deep: true });
 
+const handleAddTask = () => {
+  emit('add-task', props.step.id);
+};
+
+const handleEditTask = (task) => {
+  emit('edit-task', task);
+};
+
 const onDragChange = (evt) => {
   if (evt.added) {
+    const task = evt.added.element;
+    const insertBeforeTaskId = internalTasks.value[evt.added.newIndex + 1]?.id || null;
+
     store.dispatch('kanban2/moveTask', {
-      taskId: evt.added.element.id,
-      position: evt.added.newIndex + 1, // 1-indexed for backend typically
-      stepId: props.step.id,
+      taskId: task.id,
+      destinationStepId: props.step.id,
+      insertBeforeTaskId,
     });
   } else if (evt.moved) {
+    const task = evt.moved.element;
+    const insertBeforeTaskId = internalTasks.value[evt.moved.newIndex + 1]?.id || null;
+
     store.dispatch('kanban2/moveTask', {
-      taskId: evt.moved.element.id,
-      position: evt.moved.newIndex + 1,
-      stepId: props.step.id,
+      taskId: task.id,
+      destinationStepId: props.step.id,
+      insertBeforeTaskId,
     });
   }
 };

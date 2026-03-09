@@ -237,6 +237,8 @@
           :show-completed="showCompleted"
           :show-cancelled="showCancelled"
           @add-task="openCreateModal"
+          @edit-task="openEditModal"
+          @add-column="openColumnModal"
         />
       </div>
     </div>
@@ -254,8 +256,10 @@
       :task="selectedTask"
       :board-id="selectedBoardId"
       :step-id="selectedStepId"
+      :steps="steps"
       @close="closeTaskModal"
       @save="handleTaskSave"
+      @delete="handleTaskDelete"
     />
   </div>
 </template>
@@ -393,6 +397,17 @@ const openCreateModal = (stepId = null) => {
   showTaskModal.value = true;
 };
 
+const openEditModal = (task) => {
+  selectedTask.value = task;
+  selectedStepId.value = task.step_id;
+  showTaskModal.value = true;
+};
+
+const openColumnModal = () => {
+  // TODO: Implement column creation modal when backend supports it
+  useAlert('Column creation coming soon!');
+};
+
 const closeTaskModal = () => {
   showTaskModal.value = false;
   selectedTask.value = null;
@@ -417,6 +432,18 @@ const handleTaskSave = async taskData => {
   } catch (error) {
     useAlert(
       parseAPIErrorResponse(error) || t('KANBAN.TASK_MODAL.SAVE_ERROR')
+    );
+  }
+};
+
+const handleTaskDelete = async taskId => {
+  try {
+    await store.dispatch('kanban2/deleteTask', taskId);
+    useAlert(t('KANBAN.TASK_MODAL.DELETE_SUCCESS'));
+    closeTaskModal();
+  } catch (error) {
+    useAlert(
+      parseAPIErrorResponse(error) || t('KANBAN.TASK_MODAL.DELETE_ERROR')
     );
   }
 };
