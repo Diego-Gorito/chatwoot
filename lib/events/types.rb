@@ -67,4 +67,13 @@ module Events::Types
 
   # copilot events
   COPILOT_MESSAGE_CREATED = 'copilot.message.created'
+
+  # kanban events
+  KANBAN_BOARD_CREATED = 'kanban.board.created'
+  KANBAN_BOARD_UPDATED = 'kanban.board.updated'
+  KANBAN_BOARD_DELETED = 'kanban.board.deleted'
+  KANBAN_TASK_CREATED = 'kanban.task.created'
+  KANBAN_TASK_UPDATED = 'kanban.task.updated'
+  KANBAN_TASK_DELETED = 'kanban.task.deleted'
+  KANBAN_TASK_MOVED = 'kanban.task.moved'
 end
