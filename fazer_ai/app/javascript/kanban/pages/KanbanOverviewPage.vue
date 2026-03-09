@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAlert } from 'dashboard/composables';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import SettingsLayout from 'dashboard/routes/dashboard/settings/SettingsLayout.vue';
@@ -16,6 +16,7 @@ import kanbanModule from 'kanban/store/modules/kanban';
 import { useBoardModal } from 'kanban/composables/useBoardModal';
 
 const store = useStore();
+const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { isAdmin } = useAdmin();
@@ -90,7 +91,7 @@ const {
     if (newBoard?.id) {
       router.push({
         name: 'kanban_board_show',
-        params: { boardId: newBoard.id },
+        params: { accountId: route.params.accountId, boardId: newBoard.id },
       });
     }
   },
@@ -107,7 +108,7 @@ onMounted(() => {
 });
 
 const openBoardSettings = boardId => {
-  router.push({ name: 'kanban_board_settings', params: { boardId } });
+  router.push({ name: 'kanban_board_settings', params: { accountId: route.params.accountId, boardId } });
 };
 
 const getVisibleAgents = assignedAgents => {
@@ -341,7 +342,7 @@ const getAssignedInboxes = inboxIds => {
                     :key="board.id"
                     :to="{
                       name: 'kanban_board_show',
-                      params: { boardId: board.id },
+                      params: { accountId: route.params.accountId, boardId: board.id },
                     }"
                     class="group flex flex-col gap-4 p-5 border rounded-xl border-n-slate-3 bg-n-alpha-1 hover:bg-n-alpha-2 hover:border-n-slate-4 transition-all cursor-pointer"
                   >
