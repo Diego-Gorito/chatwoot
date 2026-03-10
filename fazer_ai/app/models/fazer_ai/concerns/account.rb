@@ -16,6 +16,6 @@ module FazerAi::Concerns::Account
 
   # Simplified: Kanban is now a standard feature without subscription checks
   def kanban_feature_enabled?
-    feature_enabled?('kanban')
+    true
   end
 end

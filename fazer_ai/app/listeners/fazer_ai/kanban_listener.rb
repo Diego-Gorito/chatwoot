@@ -156,9 +156,11 @@ class FazerAi::KanbanListener < BaseListener
       board: board,
       board_step: board.first_step,
       creator: nil,
-      title: title,
-      conversation_ids: [conversation.display_id]
+      title: title
     )
+
+    task.conversations << conversation
+    task.save!
 
     assign_conversation_agent_to_task(task, conversation, board)
   end
